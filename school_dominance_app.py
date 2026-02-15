@@ -11,67 +11,61 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# GLOBAL STYLING (Improved Spacing + Cards)
+# GLOBAL STYLING (Clean Minimal Layout)
 # --------------------------------------------------
 
 st.markdown("""
 <style>
 
-/* Page padding */
+/* Page width + padding */
 .block-container {
     padding-top: 2rem;
-    padding-bottom: 6rem;
-    max-width: 1000px;
+    padding-bottom: 5rem;
+    max-width: 900px;
 }
 
-/* Clean clickable buttons */
+/* Clean clickable names */
 button[kind="secondary"] {
     background: none !important;
     border: none !important;
     padding: 0 !important;
     color: inherit !important;
     font-weight: 600 !important;
-    text-align: left !important;
     font-size: 16px;
+    text-align: left !important;
 }
 button[kind="secondary"]:hover {
     text-decoration: underline;
-}
-
-/* Section cards */
-.section-card {
-    background: rgba(255,255,255,0.04);
-    padding: 18px 20px;
-    border-radius: 12px;
-    margin-top: 20px;
 }
 
 /* Section headings */
 .section-title {
     font-size: 18px;
     font-weight: 600;
-    margin-bottom: 12px;
+    margin-top: 28px;
+    margin-bottom: 14px;
 }
 
-/* Secondary text */
+/* Sub text */
 .sub-text {
     font-size: 14px;
-    opacity: 0.75;
-    margin-bottom: 14px;
+    opacity: 0.7;
+    margin-top: 4px;
+    margin-bottom: 16px;
 }
 
 /* Breakdown row */
 .breakdown-row {
-    padding: 12px 0;
+    padding: 14px 0;
     border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
-/* Remove border on last item */
+/* Remove bottom border on last row */
 .breakdown-row:last-child {
     border-bottom: none;
 }
 
-/* Hide Streamlit footer */
+/* Clean footer */
 footer {visibility: hidden;}
 
 </style>
@@ -107,12 +101,7 @@ df = load_data()
 st.title("Club Affiliation Explorer")
 st.caption("McKinnon Basketball Association")
 
-mode = st.radio(
-    "Search by",
-    ["School", "Club"],
-    horizontal=True
-)
-
+mode = st.radio("Search by", ["School", "Club"], horizontal=True)
 st.divider()
 
 # ==================================================
@@ -139,8 +128,7 @@ if mode == "School":
 
         st.caption(f"{total_players} total players from this school")
 
-        # ---------------- MOST COMMON ----------------
-        st.markdown("<div class='section-card'>", unsafe_allow_html=True)
+        # MOST COMMON
         st.markdown("<div class='section-title'>Most Common Club</div>", unsafe_allow_html=True)
 
         if st.button(primary["Club"], key="primary_club", type="secondary"):
@@ -150,10 +138,8 @@ if mode == "School":
             f"<div class='sub-text'>{int(primary['Club Players'])} players • {primary['Affiliation %']}%</div>",
             unsafe_allow_html=True
         )
-        st.markdown("</div>", unsafe_allow_html=True)
 
-        # ---------------- TOP 3 ----------------
-        st.markdown("<div class='section-card'>", unsafe_allow_html=True)
+        # TOP 3
         st.markdown("<div class='section-title'>Top 3 Clubs</div>", unsafe_allow_html=True)
 
         for i in range(min(3, len(school_data))):
@@ -167,10 +153,7 @@ if mode == "School":
                 unsafe_allow_html=True
             )
 
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        # ---------------- FULL BREAKDOWN ----------------
-        st.markdown("<div class='section-card'>", unsafe_allow_html=True)
+        # FULL BREAKDOWN
         st.markdown("<div class='section-title'>Full Breakdown</div>", unsafe_allow_html=True)
 
         for i, row in school_data.iterrows():
@@ -182,8 +165,6 @@ if mode == "School":
                 f"<div class='sub-text breakdown-row'>{int(row['Club Players'])} players • {row['Affiliation %']}%</div>",
                 unsafe_allow_html=True
             )
-
-        st.markdown("</div>", unsafe_allow_html=True)
 
 # ==================================================
 # CLUB MODE
@@ -213,11 +194,10 @@ if mode == "Club":
 
         st.caption(f"{total_players} total players across {breakdown.shape[0]} schools")
 
-        # ---------------- MOST COMMON ----------------
-        st.markdown("<div class='section-card'>", unsafe_allow_html=True)
-        st.markdown("<div class='section-title'>Most Common School</div>", unsafe_allow_html=True)
-
+        # MOST COMMON
         primary = breakdown.iloc[0]
+
+        st.markdown("<div class='section-title'>Most Common School</div>", unsafe_allow_html=True)
 
         if st.button(primary["School"], key="primary_school", type="secondary"):
             pass
@@ -226,10 +206,8 @@ if mode == "Club":
             f"<div class='sub-text'>{int(primary['Club Players'])} players • {primary['Share %']}%</div>",
             unsafe_allow_html=True
         )
-        st.markdown("</div>", unsafe_allow_html=True)
 
-        # ---------------- TOP 3 ----------------
-        st.markdown("<div class='section-card'>", unsafe_allow_html=True)
+        # TOP 3
         st.markdown("<div class='section-title'>Top 3 Schools</div>", unsafe_allow_html=True)
 
         for i in range(min(3, len(breakdown))):
@@ -243,10 +221,7 @@ if mode == "Club":
                 unsafe_allow_html=True
             )
 
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        # ---------------- FULL BREAKDOWN ----------------
-        st.markdown("<div class='section-card'>", unsafe_allow_html=True)
+        # FULL BREAKDOWN
         st.markdown("<div class='section-title'>Full Breakdown</div>", unsafe_allow_html=True)
 
         for i, row in breakdown.iterrows():
@@ -258,8 +233,6 @@ if mode == "Club":
                 f"<div class='sub-text breakdown-row'>{int(row['Club Players'])} players • {row['Share %']}%</div>",
                 unsafe_allow_html=True
             )
-
-        st.markdown("</div>", unsafe_allow_html=True)
 
 st.divider()
 st.caption("Data reflects registered player distribution by school and club.")

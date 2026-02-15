@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# CLEAN BUTTON STYLE (Professional clickable names)
+# CLEAN CLICKABLE STYLE
 # --------------------------------------------------
 
 st.markdown("""
@@ -136,13 +136,21 @@ if mode == "School":
                 st.session_state.selected_club = row["Club"]
                 st.rerun()
 
-            col2.write(int(row["Club Players"]))
-            col3.write(f"{row['Affiliation %']}%")
+            col2.markdown(f"<div style='text-align:right'>{int(row['Club Players'])}</div>", unsafe_allow_html=True)
+            col3.markdown(f"<div style='text-align:right'>{row['Affiliation %']}%</div>", unsafe_allow_html=True)
 
-        # Full Breakdown (Clickable)
+        # Full Breakdown
         st.markdown("### Full Breakdown")
 
+        header1, header2, header3 = st.columns([4, 1, 1])
+        header1.markdown("**Club**")
+        header2.markdown("**Players**")
+        header3.markdown("** % Share**")
+
+        st.markdown("---")
+
         for i, row in school_data.iterrows():
+
             col1, col2, col3 = st.columns([4, 1, 1])
 
             if col1.button(row["Club"], key=f"club_full_{i}", type="secondary"):
@@ -150,8 +158,10 @@ if mode == "School":
                 st.session_state.selected_club = row["Club"]
                 st.rerun()
 
-            col2.write(int(row["Club Players"]))
-            col3.write(f"{row['Affiliation %']}%")
+            col2.markdown(f"<div style='text-align:right'>{int(row['Club Players'])}</div>", unsafe_allow_html=True)
+            col3.markdown(f"<div style='text-align:right'>{row['Affiliation %']}%</div>", unsafe_allow_html=True)
+
+            st.markdown("<hr style='margin:6px 0; opacity:0.2;'>", unsafe_allow_html=True)
 
         st.markdown("### Affiliation Share")
         st.bar_chart(school_data.set_index("Club")["Affiliation %"])
@@ -211,10 +221,10 @@ if mode == "Club":
                 st.session_state.selected_school = row["School"]
                 st.rerun()
 
-            col2.write(int(row["Club Players"]))
-            col3.write(f"{round((row['Club Players']/total_players)*100, 2)}%")
+            col2.markdown(f"<div style='text-align:right'>{int(row['Club Players'])}</div>", unsafe_allow_html=True)
+            col3.markdown(f"<div style='text-align:right'>{round((row['Club Players']/total_players)*100, 2)}%</div>", unsafe_allow_html=True)
 
-        # Full Breakdown (Clickable)
+        # Full Breakdown
         st.markdown("### Full Breakdown")
 
         breakdown = club_data.copy()
@@ -222,7 +232,15 @@ if mode == "Club":
             breakdown["Club Players"] / total_players * 100
         ).round(2)
 
+        header1, header2, header3 = st.columns([4, 1, 1])
+        header1.markdown("**School**")
+        header2.markdown("**Players**")
+        header3.markdown("** % Share**")
+
+        st.markdown("---")
+
         for i, row in breakdown.iterrows():
+
             col1, col2, col3 = st.columns([4, 1, 1])
 
             if col1.button(row["School"], key=f"school_full_{i}", type="secondary"):
@@ -230,8 +248,10 @@ if mode == "Club":
                 st.session_state.selected_school = row["School"]
                 st.rerun()
 
-            col2.write(int(row["Club Players"]))
-            col3.write(f"{row['Share %']}%")
+            col2.markdown(f"<div style='text-align:right'>{int(row['Club Players'])}</div>", unsafe_allow_html=True)
+            col3.markdown(f"<div style='text-align:right'>{row['Share %']}%</div>", unsafe_allow_html=True)
+
+            st.markdown("<hr style='margin:6px 0; opacity:0.2;'>", unsafe_allow_html=True)
 
         st.markdown("### Players by School")
         st.bar_chart(club_data.set_index("School")["Club Players"])

@@ -11,61 +11,66 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# GLOBAL STYLING (Clean Minimal Layout)
+# GLOBAL STYLING (Stronger Hierarchy)
 # --------------------------------------------------
 
 st.markdown("""
 <style>
 
-/* Page width + padding */
+/* Page width */
 .block-container {
     padding-top: 2rem;
     padding-bottom: 5rem;
     max-width: 900px;
 }
 
-/* Clean clickable names */
+/* Clickable names */
 button[kind="secondary"] {
     background: none !important;
     border: none !important;
     padding: 0 !important;
     color: inherit !important;
     font-weight: 600 !important;
-    font-size: 16px;
+    font-size: 17px;
     text-align: left !important;
 }
 button[kind="secondary"]:hover {
     text-decoration: underline;
 }
 
-/* Section headings */
-.section-title {
-    font-size: 18px;
-    font-weight: 600;
-    margin-top: 28px;
-    margin-bottom: 14px;
+/* Section header */
+.section-header {
+    font-size: 22px;
+    font-weight: 700;
+    margin-top: 40px;
+    margin-bottom: 18px;
 }
 
 /* Sub text */
 .sub-text {
-    font-size: 14px;
+    font-size: 15px;
     opacity: 0.7;
-    margin-top: 4px;
-    margin-bottom: 16px;
+    margin-top: 6px;
+    margin-bottom: 22px;
 }
 
-/* Breakdown row */
+/* Breakdown rows */
 .breakdown-row {
     padding: 14px 0;
     border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
-/* Remove bottom border on last row */
+/* Remove border on last row */
 .breakdown-row:last-child {
     border-bottom: none;
 }
 
-/* Clean footer */
+/* Chart spacing */
+.chart-section {
+    margin-top: 50px;
+}
+
+/* Hide Streamlit footer */
 footer {visibility: hidden;}
 
 </style>
@@ -129,10 +134,9 @@ if mode == "School":
         st.caption(f"{total_players} total players from this school")
 
         # MOST COMMON
-        st.markdown("<div class='section-title'>Most Common Club</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>Most Common Club</div>", unsafe_allow_html=True)
 
-        if st.button(primary["Club"], key="primary_club", type="secondary"):
-            pass
+        st.button(primary["Club"], key="primary_club", type="secondary")
 
         st.markdown(
             f"<div class='sub-text'>{int(primary['Club Players'])} players • {primary['Affiliation %']}%</div>",
@@ -140,13 +144,12 @@ if mode == "School":
         )
 
         # TOP 3
-        st.markdown("<div class='section-title'>Top 3 Clubs</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>Top 3 Clubs</div>", unsafe_allow_html=True)
 
         for i in range(min(3, len(school_data))):
             row = school_data.iloc[i]
 
-            if st.button(row["Club"], key=f"top_club_{i}", type="secondary"):
-                pass
+            st.button(row["Club"], key=f"top_club_{i}", type="secondary")
 
             st.markdown(
                 f"<div class='sub-text'>{int(row['Club Players'])} players • {row['Affiliation %']}%</div>",
@@ -154,17 +157,23 @@ if mode == "School":
             )
 
         # FULL BREAKDOWN
-        st.markdown("<div class='section-title'>Full Breakdown</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>Full Breakdown</div>", unsafe_allow_html=True)
 
         for i, row in school_data.iterrows():
 
-            if st.button(row["Club"], key=f"club_full_{i}", type="secondary"):
-                pass
+            st.button(row["Club"], key=f"club_full_{i}", type="secondary")
 
             st.markdown(
                 f"<div class='sub-text breakdown-row'>{int(row['Club Players'])} players • {row['Affiliation %']}%</div>",
                 unsafe_allow_html=True
             )
+
+        # CHART
+        st.markdown("<div class='chart-section'></div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>Affiliation Distribution</div>", unsafe_allow_html=True)
+
+        chart_data = school_data.set_index("Club")["Affiliation %"]
+        st.bar_chart(chart_data)
 
 # ==================================================
 # CLUB MODE
@@ -197,10 +206,9 @@ if mode == "Club":
         # MOST COMMON
         primary = breakdown.iloc[0]
 
-        st.markdown("<div class='section-title'>Most Common School</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>Most Common School</div>", unsafe_allow_html=True)
 
-        if st.button(primary["School"], key="primary_school", type="secondary"):
-            pass
+        st.button(primary["School"], key="primary_school", type="secondary")
 
         st.markdown(
             f"<div class='sub-text'>{int(primary['Club Players'])} players • {primary['Share %']}%</div>",
@@ -208,13 +216,12 @@ if mode == "Club":
         )
 
         # TOP 3
-        st.markdown("<div class='section-title'>Top 3 Schools</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>Top 3 Schools</div>", unsafe_allow_html=True)
 
         for i in range(min(3, len(breakdown))):
             row = breakdown.iloc[i]
 
-            if st.button(row["School"], key=f"top_school_{i}", type="secondary"):
-                pass
+            st.button(row["School"], key=f"top_school_{i}", type="secondary")
 
             st.markdown(
                 f"<div class='sub-text'>{int(row['Club Players'])} players • {row['Share %']}%</div>",
@@ -222,17 +229,23 @@ if mode == "Club":
             )
 
         # FULL BREAKDOWN
-        st.markdown("<div class='section-title'>Full Breakdown</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>Full Breakdown</div>", unsafe_allow_html=True)
 
         for i, row in breakdown.iterrows():
 
-            if st.button(row["School"], key=f"school_full_{i}", type="secondary"):
-                pass
+            st.button(row["School"], key=f"school_full_{i}", type="secondary")
 
             st.markdown(
                 f"<div class='sub-text breakdown-row'>{int(row['Club Players'])} players • {row['Share %']}%</div>",
                 unsafe_allow_html=True
             )
+
+        # CHART
+        st.markdown("<div class='chart-section'></div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>Player Distribution</div>", unsafe_allow_html=True)
+
+        chart_data = breakdown.set_index("School")["Share %"]
+        st.bar_chart(chart_data)
 
 st.divider()
 st.caption("Data reflects registered player distribution by school and club.")

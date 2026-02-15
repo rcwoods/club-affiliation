@@ -17,10 +17,7 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-.block-container {
-    padding-top: 1.5rem;
-    padding-bottom: 5rem;
-}
+.block-container { padding-top: 1.5rem; padding-bottom: 4rem; }
 
 button[kind="secondary"] {
     background: none !important;
@@ -30,19 +27,17 @@ button[kind="secondary"] {
     font-weight: 600 !important;
     text-align: left !important;
 }
-button[kind="secondary"]:hover {
-    text-decoration: underline;
-}
+button[kind="secondary"]:hover { text-decoration: underline; }
 
 .section-title {
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 700;
-    margin-top: 35px;
+    margin-top: 30px;
     margin-bottom: 10px;
 }
 
 .sub-text {
-    font-size: 15px;
+    font-size: 14px;
     opacity: 0.75;
     margin-bottom: 10px;
 }
@@ -50,11 +45,11 @@ button[kind="secondary"]:hover {
 .rank-number {
     font-weight: 700;
     opacity: 0.6;
-    margin-right: 8px;
+    margin-right: 6px;
 }
 
 .breakdown-row {
-    padding: 10px 0;
+    padding: 8px 0;
     border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
@@ -99,18 +94,18 @@ if "selected_club" not in st.session_state:
     st.session_state.selected_club = None
 
 # --------------------------------------------------
-# NAVIGATION
+# NAVIGATION HELPERS
 # --------------------------------------------------
 
-def go_to_school(school):
+def go_to_school(name):
     st.session_state.mode = "School"
-    st.session_state.selected_school = school
+    st.session_state.selected_school = name
     st.session_state.selected_club = None
     st.rerun()
 
-def go_to_club(club):
+def go_to_club(name):
     st.session_state.mode = "Club"
-    st.session_state.selected_club = club
+    st.session_state.selected_club = name
     st.session_state.selected_school = None
     st.rerun()
 
@@ -121,37 +116,33 @@ def go_to_club(club):
 st.title("Club Affiliation Explorer")
 st.caption("McKinnon Basketball Association")
 
-mode = st.radio(
+st.radio(
     "Search by",
     ["School", "Club"],
     horizontal=True,
-    index=0 if st.session_state.mode == "School" else 1
+    key="mode"
 )
 
-st.session_state.mode = mode
 st.divider()
 
 # ==================================================
 # SCHOOL MODE
 # ==================================================
 
-if mode == "School":
+if st.session_state.mode == "School":
 
     schools = sorted(df["School"].unique())
 
-    selected_school = st.selectbox(
+    st.selectbox(
         "Select a School",
         ["Choose an option"] + schools,
-        index=(
-            schools.index(st.session_state.selected_school) + 1
-            if st.session_state.selected_school in schools
-            else 0
-        )
+        key="selected_school"
     )
 
-    if selected_school != "Choose an option":
+    if st.session_state.selected_school and \
+       st.session_state.selected_school != "Choose an option":
 
-        st.session_state.selected_school = selected_school
+        selected_school = st.session_state.selected_school
 
         school_data = (
             df[df["School"] == selected_school]
@@ -184,14 +175,16 @@ if mode == "School":
 
         for i in range(min(3, len(school_data))):
             row = school_data.iloc[i]
+
             if st.button(row["Club"], key=f"top_club_{i}", type="secondary"):
                 go_to_club(row["Club"])
+
             st.markdown(
                 f'<div class="sub-text">{int(row["Club Players"])} players • {row["Affiliation %"]}%</div>',
                 unsafe_allow_html=True
             )
 
-        # Full Breakdown with Ranking
+        # Full Breakdown with ranking
         st.markdown('<div class="section-title">Full Breakdown</div>', unsafe_allow_html=True)
 
         for i, row in school_data.iterrows():
@@ -226,23 +219,20 @@ if mode == "School":
 # CLUB MODE
 # ==================================================
 
-if mode == "Club":
+if st.session_state.mode == "Club":
 
     clubs = sorted(df["Club"].unique())
 
-    selected_club = st.selectbox(
+    st.selectbox(
         "Select a Club",
         ["Choose an option"] + clubs,
-        index=(
-            clubs.index(st.session_state.selected_club) + 1
-            if st.session_state.selected_club in clubs
-            else 0
-        )
+        key="selected_club"
     )
 
-    if selected_club != "Choose an option":
+    if st.session_state.selected_club and \
+       st.session_state.selected_club != "Choose an option":
 
-        st.session_state.selected_club = selected_club
+        selected_club = st.session_state.selected_club
 
         club_data = (
             df[df["Club"] == selected_club]
@@ -261,11 +251,11 @@ if mode == "Club":
             breakdown["Club Players"] / total_players * 100
         ).round(2)
 
-        st.caption(f"{total_players} total players across {breakdown.shape[0]} schools")
-
         primary = breakdown.iloc[0]
 
-        # Most Common School
+        st.caption(f"{total_players} total players across {breakdown.shape[0]} schools")
+
+        # Most Common
         st.markdown('<div class="section-title">Most Common School</div>', unsafe_allow_html=True)
 
         if st.button(primary["School"], key="primary_school", type="secondary"):
@@ -281,14 +271,16 @@ if mode == "Club":
 
         for i in range(min(3, len(breakdown))):
             row = breakdown.iloc[i]
+
             if st.button(row["School"], key=f"top_school_{i}", type="secondary"):
                 go_to_school(row["School"])
+
             st.markdown(
                 f'<div class="sub-text">{int(row["Club Players"])} players • {row["Share %"]}%</div>',
                 unsafe_allow_html=True
             )
 
-        # Full Breakdown with Ranking
+        # Full Breakdown with ranking
         st.markdown('<div class="section-title">Full Breakdown</div>', unsafe_allow_html=True)
 
         for i, row in breakdown.iterrows():

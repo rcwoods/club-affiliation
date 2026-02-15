@@ -2,21 +2,28 @@ import streamlit as st
 import pandas as pd
 
 # --------------------------------------------------
-# PAGE CONFIG
+# PAGE CONFIG (Wide layout fixes mobile scroll)
 # --------------------------------------------------
 
 st.set_page_config(
     page_title="Club Affiliation Explorer",
-    layout="centered"
+    layout="wide"
 )
 
 # --------------------------------------------------
-# GLOBAL STYLING
+# GLOBAL STYLING (Mobile Safe)
 # --------------------------------------------------
 
 st.markdown("""
 <style>
 
+/* Reduce top padding */
+.block-container {
+    padding-top: 1.5rem;
+    padding-bottom: 6rem;
+}
+
+/* Clickable names */
 button[kind="secondary"] {
     background: none !important;
     border: none !important;
@@ -29,6 +36,7 @@ button[kind="secondary"]:hover {
     text-decoration: underline;
 }
 
+/* Compact breakdown styling */
 .header-row {
     font-weight: 600;
     opacity: 0.75;
@@ -42,9 +50,8 @@ button[kind="secondary"]:hover {
     margin: 4px 0 6px 0;
 }
 
-.block-container {
-    padding-top: 2rem;
-}
+/* Prevent bottom trapping */
+footer {visibility: hidden;}
 
 </style>
 """, unsafe_allow_html=True)
@@ -95,7 +102,8 @@ st.caption("McKinnon Basketball Association")
 mode = st.radio(
     "Search by",
     ["School", "Club"],
-    horizontal=True
+    horizontal=True,
+    index=0 if st.session_state.mode == "School" else 1
 )
 
 st.session_state.mode = mode
@@ -109,16 +117,18 @@ if mode == "School":
 
     schools = sorted(df["School"].unique())
 
-    selected = st.multiselect(
+    selected_school = st.selectbox(
         "Select a School",
-        schools,
-        default=[st.session_state.selected_school] if st.session_state.selected_school else [],
-        max_selections=1
+        ["Select a School"] + schools,
+        index=(
+            schools.index(st.session_state.selected_school) + 1
+            if st.session_state.selected_school in schools
+            else 0
+        )
     )
 
-    if selected:
+    if selected_school != "Select a School":
 
-        selected_school = selected[0]
         st.session_state.selected_school = selected_school
 
         school_data = (
@@ -152,7 +162,7 @@ if mode == "School":
         for i, row in school_data.iterrows():
             c1, c2, c3 = st.columns([5,1,1], gap="small")
 
-            if c1.button(row["Club"], key=f"club_{i}", type="secondary"):
+            if c1.button(row["Club"], key=f"club_full_{i}", type="secondary"):
                 st.session_state.mode = "Club"
                 st.session_state.selected_club = row["Club"]
                 st.rerun()
@@ -168,16 +178,18 @@ if mode == "Club":
 
     clubs = sorted(df["Club"].unique())
 
-    selected = st.multiselect(
+    selected_club = st.selectbox(
         "Select a Club",
-        clubs,
-        default=[st.session_state.selected_club] if st.session_state.selected_club else [],
-        max_selections=1
+        ["Select a Club"] + clubs,
+        index=(
+            clubs.index(st.session_state.selected_club) + 1
+            if st.session_state.selected_club in clubs
+            else 0
+        )
     )
 
-    if selected:
+    if selected_club != "Select a Club":
 
-        selected_club = selected[0]
         st.session_state.selected_club = selected_club
 
         club_data = (
@@ -190,12 +202,12 @@ if mode == "Club":
 
         st.caption(f"{total_players} total players across {club_data.shape[0]} schools")
 
-        st.markdown("### Full Breakdown")
-
         breakdown = club_data.copy()
         breakdown["Share %"] = (
             breakdown["Club Players"] / total_players * 100
         ).round(2)
+
+        st.markdown("### Full Breakdown")
 
         h1, h2, h3 = st.columns([5,1,1], gap="small")
         h1.markdown('<div class="header-row">School</div>', unsafe_allow_html=True)
@@ -207,7 +219,7 @@ if mode == "Club":
         for i, row in breakdown.iterrows():
             c1, c2, c3 = st.columns([5,1,1], gap="small")
 
-            if c1.button(row["School"], key=f"school_{i}", type="secondary"):
+            if c1.button(row["School"], key=f"school_full_{i}", type="secondary"):
                 st.session_state.mode = "School"
                 st.session_state.selected_school = row["School"]
                 st.rerun()

@@ -12,12 +12,16 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# STYLING
+# GLOBAL STYLING
 # --------------------------------------------------
 
 st.markdown("""
 <style>
-.block-container { padding-top: 1.5rem; padding-bottom: 4rem; }
+
+.block-container {
+    padding-top: 1.5rem;
+    padding-bottom: 6rem;
+}
 
 button[kind="secondary"] {
     background: none !important;
@@ -27,33 +31,27 @@ button[kind="secondary"] {
     font-weight: 600 !important;
     text-align: left !important;
 }
-button[kind="secondary"]:hover { text-decoration: underline; }
-
-.section-title {
-    font-size: 24px;
-    font-weight: 700;
-    margin-top: 30px;
-    margin-bottom: 10px;
+button[kind="secondary"]:hover {
+    text-decoration: underline;
 }
 
-.sub-text {
-    font-size: 14px;
-    opacity: 0.75;
-    margin-bottom: 10px;
+.section-space {
+    margin-top: 2rem;
 }
 
 .rank-number {
     font-weight: 700;
     opacity: 0.6;
-    margin-right: 6px;
 }
 
-.breakdown-row {
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+.sub-text {
+    font-size: 14px;
+    opacity: 0.75;
+    margin-bottom: 14px;
 }
 
 footer {visibility: hidden;}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -94,20 +92,30 @@ if "selected_club" not in st.session_state:
     st.session_state.selected_club = None
 
 # --------------------------------------------------
-# NAVIGATION HELPERS
+# SAFE NAVIGATION HANDLER
 # --------------------------------------------------
 
 def go_to_school(name):
-    st.session_state.mode = "School"
-    st.session_state.selected_school = name
-    st.session_state.selected_club = None
+    st.session_state._nav_target = ("School", name)
     st.rerun()
 
 def go_to_club(name):
-    st.session_state.mode = "Club"
-    st.session_state.selected_club = name
-    st.session_state.selected_school = None
+    st.session_state._nav_target = ("Club", name)
     st.rerun()
+
+if "_nav_target" in st.session_state:
+    target_mode, target_value = st.session_state._nav_target
+
+    st.session_state.mode = target_mode
+
+    if target_mode == "School":
+        st.session_state.selected_school = target_value
+        st.session_state.selected_club = None
+    else:
+        st.session_state.selected_club = target_value
+        st.session_state.selected_school = None
+
+    del st.session_state._nav_target
 
 # --------------------------------------------------
 # HEADER
@@ -116,7 +124,7 @@ def go_to_club(name):
 st.title("Club Affiliation Explorer")
 st.caption("McKinnon Basketball Association")
 
-st.radio(
+mode = st.radio(
     "Search by",
     ["School", "Club"],
     horizontal=True,
@@ -129,20 +137,23 @@ st.divider()
 # SCHOOL MODE
 # ==================================================
 
-if st.session_state.mode == "School":
+if mode == "School":
 
     schools = sorted(df["School"].unique())
 
-    st.selectbox(
+    selected_school = st.selectbox(
         "Select a School",
-        ["Choose an option"] + schools,
-        key="selected_school"
+        options=["Choose an option"] + schools,
+        index=(
+            schools.index(st.session_state.selected_school) + 1
+            if st.session_state.selected_school in schools
+            else 0
+        )
     )
 
-    if st.session_state.selected_school and \
-       st.session_state.selected_school != "Choose an option":
+    if selected_school != "Choose an option":
 
-        selected_school = st.session_state.selected_school
+        st.session_state.selected_school = selected_school
 
         school_data = (
             df[df["School"] == selected_school]
@@ -159,80 +170,91 @@ if st.session_state.mode == "School":
 
         st.caption(f"{total_players} total players from this school")
 
-        # Most Common
-        st.markdown('<div class="section-title">Most Common Club</div>', unsafe_allow_html=True)
+        # ---------------- MOST COMMON
+        st.markdown("## Most Common Club")
 
-        if st.button(primary["Club"], key="primary_club", type="secondary"):
+        if st.button(primary["Club"], type="secondary"):
             go_to_club(primary["Club"])
 
         st.markdown(
-            f'<div class="sub-text">{int(primary["Club Players"])} players • {primary["Affiliation %"]}%</div>',
+            f"<div class='sub-text'>{int(primary['Club Players'])} players • {primary['Affiliation %']}%</div>",
             unsafe_allow_html=True
         )
 
-        # Top 3
-        st.markdown('<div class="section-title">Top 3 Clubs</div>', unsafe_allow_html=True)
+        # ---------------- TOP 3
+        st.markdown("<div class='section-space'></div>", unsafe_allow_html=True)
+        st.markdown("## Top 3 Clubs")
 
         for i in range(min(3, len(school_data))):
             row = school_data.iloc[i]
 
-            if st.button(row["Club"], key=f"top_club_{i}", type="secondary"):
+            col_rank, col_name = st.columns([1,9])
+            col_rank.markdown(f"<div class='rank-number'>#{i+1}</div>", unsafe_allow_html=True)
+
+            if col_name.button(row["Club"], key=f"top_{i}", type="secondary"):
                 go_to_club(row["Club"])
 
-            st.markdown(
-                f'<div class="sub-text">{int(row["Club Players"])} players • {row["Affiliation %"]}%</div>',
+            col_name.markdown(
+                f"<div class='sub-text'>{int(row['Club Players'])} players • {row['Affiliation %']}%</div>",
                 unsafe_allow_html=True
             )
 
-        # Full Breakdown with ranking
-        st.markdown('<div class="section-title">Full Breakdown</div>', unsafe_allow_html=True)
+        # ---------------- FULL BREAKDOWN
+        st.markdown("<div class='section-space'></div>", unsafe_allow_html=True)
+        st.markdown("## Full Breakdown")
 
         for i, row in school_data.iterrows():
-            col1, col2 = st.columns([6,2])
+            col_rank, col_name = st.columns([1,9])
+            col_rank.markdown(f"<div class='rank-number'>#{i+1}</div>", unsafe_allow_html=True)
 
-            with col1:
-                st.markdown(f'<span class="rank-number">{i+1}.</span>', unsafe_allow_html=True)
-                if st.button(row["Club"], key=f"club_full_{i}", type="secondary"):
-                    go_to_club(row["Club"])
+            if col_name.button(row["Club"], key=f"full_{i}", type="secondary"):
+                go_to_club(row["Club"])
 
-            with col2:
-                st.markdown(
-                    f'<div style="text-align:right">{int(row["Club Players"])} • {row["Affiliation %"]}%</div>',
-                    unsafe_allow_html=True
-                )
+            col_name.markdown(
+                f"<div class='sub-text'>{int(row['Club Players'])} players • {row['Affiliation %']}%</div>",
+                unsafe_allow_html=True
+            )
 
-            st.markdown('<div class="breakdown-row"></div>', unsafe_allow_html=True)
-
-        # Chart
-        st.markdown('<div class="section-title">Distribution Chart</div>', unsafe_allow_html=True)
+        # ---------------- CHART
+        st.markdown("<div class='section-space'></div>", unsafe_allow_html=True)
+        st.markdown("## Distribution Chart")
 
         fig = px.bar(
             school_data,
             x="Club",
             y="Affiliation %",
-            text="Affiliation %"
+            text="Affiliation %",
         )
-        fig.update_layout(showlegend=False)
+
+        fig.update_layout(
+            xaxis_title="Club",
+            yaxis_title="Affiliation %",
+            showlegend=False
+        )
+
         st.plotly_chart(fig, use_container_width=True)
 
 # ==================================================
 # CLUB MODE
 # ==================================================
 
-if st.session_state.mode == "Club":
+if mode == "Club":
 
     clubs = sorted(df["Club"].unique())
 
-    st.selectbox(
+    selected_club = st.selectbox(
         "Select a Club",
-        ["Choose an option"] + clubs,
-        key="selected_club"
+        options=["Choose an option"] + clubs,
+        index=(
+            clubs.index(st.session_state.selected_club) + 1
+            if st.session_state.selected_club in clubs
+            else 0
+        )
     )
 
-    if st.session_state.selected_club and \
-       st.session_state.selected_club != "Choose an option":
+    if selected_club != "Choose an option":
 
-        selected_club = st.session_state.selected_club
+        st.session_state.selected_club = selected_club
 
         club_data = (
             df[df["Club"] == selected_club]
@@ -245,70 +267,76 @@ if st.session_state.mode == "Club":
             st.stop()
 
         total_players = club_data["Club Players"].sum()
-
-        breakdown = club_data.copy()
-        breakdown["Share %"] = (
-            breakdown["Club Players"] / total_players * 100
+        club_data["Share %"] = (
+            club_data["Club Players"] / total_players * 100
         ).round(2)
 
-        primary = breakdown.iloc[0]
+        primary = club_data.iloc[0]
 
-        st.caption(f"{total_players} total players across {breakdown.shape[0]} schools")
+        st.caption(f"{total_players} total players across {club_data.shape[0]} schools")
 
-        # Most Common
-        st.markdown('<div class="section-title">Most Common School</div>', unsafe_allow_html=True)
+        # ---------------- MOST COMMON
+        st.markdown("## Most Common School")
 
-        if st.button(primary["School"], key="primary_school", type="secondary"):
+        if st.button(primary["School"], type="secondary"):
             go_to_school(primary["School"])
 
         st.markdown(
-            f'<div class="sub-text">{int(primary["Club Players"])} players • {primary["Share %"]}%</div>',
+            f"<div class='sub-text'>{int(primary['Club Players'])} players • {primary['Share %']}%</div>",
             unsafe_allow_html=True
         )
 
-        # Top 3
-        st.markdown('<div class="section-title">Top 3 Schools</div>', unsafe_allow_html=True)
+        # ---------------- TOP 3
+        st.markdown("<div class='section-space'></div>", unsafe_allow_html=True)
+        st.markdown("## Top 3 Schools")
 
-        for i in range(min(3, len(breakdown))):
-            row = breakdown.iloc[i]
+        for i in range(min(3, len(club_data))):
+            row = club_data.iloc[i]
 
-            if st.button(row["School"], key=f"top_school_{i}", type="secondary"):
+            col_rank, col_name = st.columns([1,9])
+            col_rank.markdown(f"<div class='rank-number'>#{i+1}</div>", unsafe_allow_html=True)
+
+            if col_name.button(row["School"], key=f"top_school_{i}", type="secondary"):
                 go_to_school(row["School"])
 
-            st.markdown(
-                f'<div class="sub-text">{int(row["Club Players"])} players • {row["Share %"]}%</div>',
+            col_name.markdown(
+                f"<div class='sub-text'>{int(row['Club Players'])} players • {row['Share %']}%</div>",
                 unsafe_allow_html=True
             )
 
-        # Full Breakdown with ranking
-        st.markdown('<div class="section-title">Full Breakdown</div>', unsafe_allow_html=True)
+        # ---------------- FULL BREAKDOWN
+        st.markdown("<div class='section-space'></div>", unsafe_allow_html=True)
+        st.markdown("## Full Breakdown")
 
-        for i, row in breakdown.iterrows():
-            col1, col2 = st.columns([6,2])
+        for i, row in club_data.iterrows():
+            col_rank, col_name = st.columns([1,9])
+            col_rank.markdown(f"<div class='rank-number'>#{i+1}</div>", unsafe_allow_html=True)
 
-            with col1:
-                st.markdown(f'<span class="rank-number">{i+1}.</span>', unsafe_allow_html=True)
-                if st.button(row["School"], key=f"school_full_{i}", type="secondary"):
-                    go_to_school(row["School"])
+            if col_name.button(row["School"], key=f"full_school_{i}", type="secondary"):
+                go_to_school(row["School"])
 
-            with col2:
-                st.markdown(
-                    f'<div style="text-align:right">{int(row["Club Players"])} • {row["Share %"]}%</div>',
-                    unsafe_allow_html=True
-                )
+            col_name.markdown(
+                f"<div class='sub-text'>{int(row['Club Players'])} players • {row['Share %']}%</div>",
+                unsafe_allow_html=True
+            )
 
-            st.markdown('<div class="breakdown-row"></div>', unsafe_allow_html=True)
-
-        # Chart
-        st.markdown('<div class="section-title">Distribution Chart</div>', unsafe_allow_html=True)
+        # ---------------- CHART
+        st.markdown("<div class='section-space'></div>", unsafe_allow_html=True)
+        st.markdown("## Distribution Chart")
 
         fig = px.bar(
-            breakdown,
+            club_data,
             x="School",
             y="Share %",
-            text="Share %"
+            text="Share %",
         )
-        fig.update_layout(showlegend=False)
+
+        fig.update_layout(
+            xaxis_title="School",
+            yaxis_title="Share %",
+            showlegend=False
+        )
+
         st.plotly_chart(fig, use_container_width=True)
 
 st.divider()

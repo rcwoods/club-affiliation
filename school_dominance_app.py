@@ -1,24 +1,32 @@
 import streamlit as st
 import pandas as pd
 
+# --------------------------------------------------
+# PAGE CONFIG
+# --------------------------------------------------
+
 st.set_page_config(
-    page_title="School Club Dominance Search",
+    page_title="School Club Affiliation",
+    page_icon="🏀",
     layout="centered"
 )
+
+# --------------------------------------------------
+# DATA LOADING
+# --------------------------------------------------
 
 @st.cache_data
 def load_data():
     df = pd.read_csv("Schools per Club.csv")
     df = df.dropna(subset=["School Details"])
 
-    # Rename columns for clarity
     df = df.rename(columns={
+        "School Details": "School",
         "Count": "Total Players",
         "Count.1": "Club Players"
     })
 
-    # Calculate % share correctly
-    df["% Share"] = (
+    df["Affiliation %"] = (
         df["Club Players"] / df["Total Players"] * 100
     ).round(2)
 
@@ -27,35 +35,95 @@ def load_data():
 
 df = load_data()
 
-st.title("🏀 School → Club Dominance Search")
-st.write("Search any school to see which basketball club dominates it.")
+# --------------------------------------------------
+# HEADER
+# --------------------------------------------------
 
-# Create searchable dropdown
-school_list = sorted(df["School Details"].unique())
-selected_school = st.selectbox("Select a School", school_list)
+st.title("🏀 School → Club Affiliation")
+st.markdown(
+    "Explore how players from each school are distributed across basketball clubs."
+)
+
+# --------------------------------------------------
+# SCHOOL SELECTION
+# --------------------------------------------------
+
+school_list = sorted(df["School"].unique())
+selected_school = st.selectbox(
+    "Select a School",
+    school_list
+)
+
+# --------------------------------------------------
+# DISPLAY RESULTS
+# --------------------------------------------------
 
 if selected_school:
-    school_data = df[df["School Details"] == selected_school]
-    school_data = school_data.sort_values("% Share", ascending=False)
 
-    dominant = school_data.iloc[0]
-
-    st.subheader("📊 Dominant Club")
-    st.success(
-        f"{dominant['Club']} dominates {selected_school} "
-        f"with {dominant['% Share']}% "
-        f"({int(dominant['Club Players'])} of {int(dominant['Total Players'])} players)."
+    school_data = (
+        df[df["School"] == selected_school]
+        .sort_values("Affiliation %", ascending=False)
     )
 
-    st.subheader("Full Breakdown")
+    primary_affiliation = school_data.iloc[0]
+
+    # ---- Affiliation Category ----
+    affiliation_level = ""
+    if primary_affiliation["Affiliation %"] >= 60:
+        affiliation_level = "Strong Affiliation"
+    elif primary_affiliation["Affiliation %"] >= 40:
+        affiliation_level = "Leading Affiliation"
+    elif primary_affiliation["Affiliation %"] >= 25:
+        affiliation_level = "Shared Affiliation"
+    else:
+        affiliation_level = "Broad Distribution"
+
+    st.divider()
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric(
+        "Primary Club Affiliation",
+        primary_affiliation["Club"]
+    )
+
+    col2.metric(
+        "Affiliation Share",
+        f"{primary_affiliation['Affiliation %']}%"
+    )
+
+    col3.metric(
+        "Total Players",
+        int(primary_affiliation["Total Players"])
+    )
+
+    st.caption(affiliation_level)
+
+    # ---- Breakdown Table ----
+    st.subheader("School Affiliation Breakdown")
+
+    display_table = school_data[[
+        "Club",
+        "Club Players",
+        "Affiliation %"
+    ]].rename(columns={
+        "Club Players": "Players at Club"
+    })
+
     st.dataframe(
-        school_data[["Club", "Club Players", "Total Players", "% Share"]]
-        .rename(columns={"Club Players": "Players at Club"}),
-        use_container_width=True
+        display_table,
+        use_container_width=True,
+        hide_index=True
     )
 
-    st.bar_chart(
-        school_data.set_index("Club")["% Share"]
-    )
+    # ---- Bar Chart ----
+    st.subheader("Affiliation Share by Club")
 
-st.caption("Built for quick school-club dominance lookup.")
+    chart_data = school_data.set_index("Club")["Affiliation %"]
+    st.bar_chart(chart_data)
+
+# --------------------------------------------------
+# FOOTER
+# --------------------------------------------------
+
+st.caption("Affiliation insights based on registered player distribution.")

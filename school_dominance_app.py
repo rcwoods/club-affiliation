@@ -89,40 +89,21 @@ st.divider()
 
 if mode == "School":
 
-    st.markdown("### Find a School")
+    schools = sorted(df["School"].unique())
 
-    # SEARCH STATE
-    if st.session_state.selected_school is None:
+    selected_school = st.selectbox(
+        "Select a School",
+        ["Select a School"] + schools,
+        index=(
+            schools.index(st.session_state.selected_school) + 1
+            if st.session_state.selected_school in schools
+            else 0
+        )
+    )
 
-        search = st.text_input("Start typing your school name")
+    if selected_school != "Select a School":
 
-        if search:
-            schools = sorted(df["School"].unique())
-
-            filtered = [
-                s for s in schools
-                if search.lower() in s.lower()
-            ][:15]
-
-            if filtered:
-                for school in filtered:
-                    if st.button(school, key=f"school_{school}", type="secondary"):
-                        st.session_state.selected_school = school
-                        st.rerun()
-            else:
-                st.write("No matching schools found.")
-
-    # SELECTED STATE
-    else:
-
-        selected_school = st.session_state.selected_school
-
-        col1, col2 = st.columns([5, 1])
-        col1.markdown(f"**{selected_school}**")
-
-        if col2.button("Change", key="change_school"):
-            st.session_state.selected_school = None
-            st.rerun()
+        st.session_state.selected_school = selected_school
 
         school_data = (
             df[df["School"] == selected_school]
@@ -181,40 +162,21 @@ if mode == "School":
 
 if mode == "Club":
 
-    st.markdown("### Find a Club")
+    clubs = sorted(df["Club"].unique())
 
-    # SEARCH STATE
-    if st.session_state.selected_club is None:
+    selected_club = st.selectbox(
+        "Select a Club",
+        ["Select a Club"] + clubs,
+        index=(
+            clubs.index(st.session_state.selected_club) + 1
+            if st.session_state.selected_club in clubs
+            else 0
+        )
+    )
 
-        search = st.text_input("Start typing the club name")
+    if selected_club != "Select a Club":
 
-        if search:
-            clubs = sorted(df["Club"].unique())
-
-            filtered = [
-                c for c in clubs
-                if search.lower() in c.lower()
-            ][:15]
-
-            if filtered:
-                for club in filtered:
-                    if st.button(club, key=f"club_{club}", type="secondary"):
-                        st.session_state.selected_club = club
-                        st.rerun()
-            else:
-                st.write("No matching clubs found.")
-
-    # SELECTED STATE
-    else:
-
-        selected_club = st.session_state.selected_club
-
-        col1, col2 = st.columns([5, 1])
-        col1.markdown(f"**{selected_club}**")
-
-        if col2.button("Change", key="change_club"):
-            st.session_state.selected_club = None
-            st.rerun()
+        st.session_state.selected_club = selected_club
 
         club_data = (
             df[df["Club"] == selected_club]

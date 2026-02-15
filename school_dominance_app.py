@@ -2,33 +2,38 @@ import streamlit as st
 import pandas as pd
 
 # --------------------------------------------------
-# PAGE CONFIG
+# PAGE CONFIG (Centered is cleaner visually)
 # --------------------------------------------------
 
 st.set_page_config(
     page_title="Club Affiliation Explorer",
-    layout="wide"
+    layout="centered"
 )
 
 # --------------------------------------------------
-# GLOBAL STYLING (Clean + Mobile Safe)
+# GLOBAL STYLING (Tighter + Cleaner)
 # --------------------------------------------------
 
 st.markdown("""
 <style>
 
-/* Page spacing */
+/* Reduce vertical padding */
 .block-container {
-    padding-top: 1.5rem;
-    padding-bottom: 6rem;
+    padding-top: 1rem;
+    padding-bottom: 3rem;
 }
 
-/* Larger section headers */
+/* Reduce space under title */
+h1 {
+    margin-bottom: 0.5rem;
+}
+
+/* Section headings */
 .section-title {
-    font-size: 1.6rem;
+    font-size: 1.4rem;
     font-weight: 700;
-    margin-top: 2.5rem;
-    margin-bottom: 0.8rem;
+    margin-top: 2rem;
+    margin-bottom: 0.6rem;
 }
 
 /* Clickable names */
@@ -44,30 +49,25 @@ button[kind="secondary"]:hover {
     text-decoration: underline;
 }
 
-/* Secondary text */
+/* Secondary info text */
 .sub-text {
     font-size: 14px;
     opacity: 0.75;
-    margin-bottom: 1.2rem;
+    margin-bottom: 1rem;
 }
 
-/* Breakdown row spacing */
+/* Breakdown rows */
 .breakdown-row {
-    padding: 12px 0;
+    padding: 8px 0;
     border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
-/* Mobile dropdown spacing */
-div[data-baseweb="select"] {
-    margin-bottom: 2rem;
+/* Tighten radio spacing */
+div[role="radiogroup"] {
+    margin-bottom: 0.5rem;
 }
 
-/* Extra space for keyboard on mobile */
-.mobile-spacer {
-    height: 100px;
-}
-
-/* Hide Streamlit footer */
+/* Hide footer */
 footer {visibility: hidden;}
 
 </style>
@@ -134,10 +134,8 @@ if mode == "School":
 
     schools = sorted(df["School"].unique())
 
-    st.markdown('<div class="mobile-spacer"></div>', unsafe_allow_html=True)
-
     selected_school = st.selectbox(
-        "",
+        "Select a School",
         schools,
         index=schools.index(st.session_state.selected_school)
         if st.session_state.selected_school in schools
@@ -206,8 +204,7 @@ if mode == "School":
 
         # CHART
         st.markdown('<div class="section-title">Distribution Chart</div>', unsafe_allow_html=True)
-        chart_data = school_data.set_index("Club")["Affiliation %"]
-        st.bar_chart(chart_data)
+        st.bar_chart(school_data.set_index("Club")["Affiliation %"])
 
 # ==================================================
 # CLUB MODE
@@ -217,10 +214,8 @@ if mode == "Club":
 
     clubs = sorted(df["Club"].unique())
 
-    st.markdown('<div class="mobile-spacer"></div>', unsafe_allow_html=True)
-
     selected_club = st.selectbox(
-        "",
+        "Select a Club",
         clubs,
         index=clubs.index(st.session_state.selected_club)
         if st.session_state.selected_club in clubs
@@ -247,7 +242,6 @@ if mode == "Club":
 
         st.caption(f"{total_players} total players across {breakdown.shape[0]} schools")
 
-        # MOST COMMON
         primary = breakdown.iloc[0]
 
         st.markdown('<div class="section-title">Most Common School</div>', unsafe_allow_html=True)
@@ -262,7 +256,6 @@ if mode == "Club":
             unsafe_allow_html=True
         )
 
-        # TOP 3
         st.markdown('<div class="section-title">Top 3 Schools</div>', unsafe_allow_html=True)
 
         for i in range(min(3, len(breakdown))):
@@ -278,7 +271,6 @@ if mode == "Club":
                 unsafe_allow_html=True
             )
 
-        # FULL BREAKDOWN
         st.markdown('<div class="section-title">Full Breakdown</div>', unsafe_allow_html=True)
 
         for i, row in breakdown.iterrows():
@@ -293,10 +285,8 @@ if mode == "Club":
                 unsafe_allow_html=True
             )
 
-        # CHART
         st.markdown('<div class="section-title">Distribution Chart</div>', unsafe_allow_html=True)
-        chart_data = breakdown.set_index("School")["Share %"]
-        st.bar_chart(chart_data)
+        st.bar_chart(breakdown.set_index("School")["Share %"])
 
 st.divider()
 st.caption("Data reflects registered player distribution by school and club.")

@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import urllib.parse
 
 # --------------------------------------------------
 # PAGE CONFIG
@@ -35,25 +36,22 @@ def load_data():
 df = load_data()
 
 # --------------------------------------------------
-# SESSION STATE
-# --------------------------------------------------
-
-if "mode" not in st.session_state:
-    st.session_state.mode = "School"
-
-if "selected_school" not in st.session_state:
-    st.session_state.selected_school = None
-
-if "selected_club" not in st.session_state:
-    st.session_state.selected_club = None
-
-# --------------------------------------------------
 # HEADER
 # --------------------------------------------------
 
 st.title("McKinnon Basketball Association")
 st.subheader("Club Affiliation Explorer")
 st.caption("Explore how players are distributed across schools and clubs.")
+
+st.divider()
+
+# --------------------------------------------------
+# URL PARAMS
+# --------------------------------------------------
+
+params = st.query_params
+selected_school = params.get("school")
+selected_club = params.get("club")
 
 # --------------------------------------------------
 # MODE SELECTOR
@@ -62,34 +60,40 @@ st.caption("Explore how players are distributed across schools and clubs.")
 mode = st.radio(
     "Search by",
     ["School", "Club"],
-    index=0 if st.session_state.mode == "School" else 1,
-    horizontal=True
+    horizontal=True,
+    index=0 if selected_school or not selected_club else 1
 )
 
-st.session_state.mode = mode
-
-st.divider()
+st.markdown("")
 
 # ==================================================
 # SCHOOL MODE
 # ==================================================
 
-if st.session_state.mode == "School":
+if mode == "School":
 
     school_list = sorted(df["School"].unique())
 
-    selected_school = st.selectbox(
-        "School",
+    selected_school_dropdown = st.selectbox(
+        "Select a School",
         ["Select a School"] + school_list,
-        index=0 if st.session_state.selected_school is None else school_list.index(st.session_state.selected_school) + 1
+        index=(
+            school_list.index(selected_school) + 1
+            if selected_school in school_list
+            else 0
+        )
     )
 
-    if selected_school != "Select a School":
+    if selected_school_dropdown != "Select a School":
 
-        st.session_state.selected_school = selected_school
+        # Update URL if dropdown used
+        if selected_school_dropdown != selected_school:
+            st.query_params.clear()
+            st.query_params["school"] = selected_school_dropdown
+            st.rerun()
 
         school_data = (
-            df[df["School"] == selected_school]
+            df[df["School"] == selected_school_dropdown]
             .sort_values("Affiliation %", ascending=False)
             .reset_index(drop=True)
         )
@@ -97,58 +101,29 @@ if st.session_state.mode == "School":
         primary = school_data.iloc[0]
 
         # School Context
-        st.markdown(f"### {selected_school}")
+        st.markdown(f"### {selected_school_dropdown}")
         st.caption(f"{int(primary['Total Players'])} total players from this school")
 
         st.markdown("")
 
         # Most Common Club
         st.markdown("#### Most Common Club")
-        st.markdown(f"**{primary['Club']}**")
+        club_link = urllib.parse.quote(primary["Club"])
+        st.markdown(f"[**{primary['Club']}**](?club={club_link})")
         st.metric("Affiliation Share", f"{primary['Affiliation %']}%")
 
         st.markdown("")
 
-        # Top 3 Summary (clean columns)
+        # Top 3 Clubs
         st.markdown("#### Top 3 Clubs")
 
-        top_3 = school_data.head(3)
-        cols = st.columns(3)
-
-        for i in range(len(top_3)):
-            with cols[i]:
-                st.markdown(f"**{top_3.loc[i, 'Club']}**")
-                st.markdown(f"{int(top_3.loc[i, 'Club Players'])} players")
-                st.markdown(f"{top_3.loc[i, 'Affiliation %']}%")
-
-        st.markdown("")
-
-        # Clickable Breakdown Table
-        st.markdown("#### Full Breakdown (Click a club to explore)")
-
-        display_table = school_data[[
-            "Club",
-            "Club Players",
-            "Affiliation %"
-        ]].rename(columns={
-            "Club Players": "Players at Club"
-        })
-
-        selection = st.dataframe(
-            display_table,
-            use_container_width=True,
-            hide_index=True,
-            selection_mode="single-row",
-            on_select="rerun"
-        )
-
-        if selection.selection.rows:
-            selected_row = selection.selection.rows[0]
-            selected_club = display_table.iloc[selected_row]["Club"]
-
-            st.session_state.mode = "Club"
-            st.session_state.selected_club = selected_club
-            st.rerun()
+        for _, row in school_data.head(3).iterrows():
+            club_encoded = urllib.parse.quote(row["Club"])
+            st.markdown(
+                f"[{row['Club']}](?club={club_encoded}) — "
+                f"{int(row['Club Players'])} players — "
+                f"{row['Affiliation %']}%"
+            )
 
         st.markdown("")
 
@@ -160,29 +135,37 @@ if st.session_state.mode == "School":
 # CLUB MODE
 # ==================================================
 
-if st.session_state.mode == "Club":
+if mode == "Club":
 
     club_list = sorted(df["Club"].unique())
 
-    selected_club = st.selectbox(
-        "Club",
+    selected_club_dropdown = st.selectbox(
+        "Select a Club",
         ["Select a Club"] + club_list,
-        index=0 if st.session_state.selected_club is None else club_list.index(st.session_state.selected_club) + 1
+        index=(
+            club_list.index(selected_club) + 1
+            if selected_club in club_list
+            else 0
+        )
     )
 
-    if selected_club != "Select a Club":
+    if selected_club_dropdown != "Select a Club":
 
-        st.session_state.selected_club = selected_club
+        # Update URL if dropdown used
+        if selected_club_dropdown != selected_club:
+            st.query_params.clear()
+            st.query_params["club"] = selected_club_dropdown
+            st.rerun()
 
         club_data = (
-            df[df["Club"] == selected_club]
+            df[df["Club"] == selected_club_dropdown]
             .sort_values("Club Players", ascending=False)
             .reset_index(drop=True)
         )
 
         total_players = club_data["Club Players"].sum()
 
-        st.markdown(f"### {selected_club}")
+        st.markdown(f"### {selected_club_dropdown}")
         st.caption(f"{total_players} total players across {club_data.shape[0]} schools")
 
         st.markdown("")
@@ -190,49 +173,18 @@ if st.session_state.mode == "Club":
         # Top 3 Schools
         st.markdown("#### Top 3 Schools")
 
-        top_3 = club_data.head(3)
-        cols = st.columns(3)
-
-        for i in range(len(top_3)):
-            with cols[i]:
-                st.markdown(f"**{top_3.loc[i, 'School']}**")
-                st.markdown(f"{int(top_3.loc[i, 'Club Players'])} players")
-                st.markdown(f"{top_3.loc[i, 'Affiliation %']}%")
-
-        st.markdown("")
-
-        # Clickable Breakdown Table
-        st.markdown("#### Full Breakdown (Click a school to explore)")
-
-        display_table = club_data[[
-            "School",
-            "Club Players",
-            "Affiliation %"
-        ]].rename(columns={
-            "Club Players": "Players from School"
-        })
-
-        selection = st.dataframe(
-            display_table,
-            use_container_width=True,
-            hide_index=True,
-            selection_mode="single-row",
-            on_select="rerun"
-        )
-
-        if selection.selection.rows:
-            selected_row = selection.selection.rows[0]
-            selected_school = display_table.iloc[selected_row]["School"]
-
-            st.session_state.mode = "School"
-            st.session_state.selected_school = selected_school
-            st.rerun()
+        for _, row in club_data.head(3).iterrows():
+            school_encoded = urllib.parse.quote(row["School"])
+            st.markdown(
+                f"[{row['School']}](?school={school_encoded}) — "
+                f"{int(row['Club Players'])} players — "
+                f"{row['Affiliation %']}%"
+            )
 
         st.markdown("")
 
         st.markdown("#### Players by School")
         st.bar_chart(club_data.set_index("School")["Club Players"])
-
 
 # --------------------------------------------------
 # FOOTER

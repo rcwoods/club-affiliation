@@ -6,7 +6,7 @@ import pandas as pd
 # --------------------------------------------------
 
 st.set_page_config(
-    page_title="School Club Affiliation",
+    page_title="Club Affiliation",
     page_icon="🏀",
     layout="centered"
 )
@@ -39,7 +39,7 @@ df = load_data()
 # HEADER
 # --------------------------------------------------
 
-st.title("🏀 School → Club Affiliation")
+st.title("🏀 Club Affiliation Explorer")
 st.markdown(
     "Explore how players from each school are distributed across basketball clubs."
 )
@@ -69,19 +69,24 @@ if selected_school:
 
     primary_affiliation = school_data.iloc[0]
 
-    # ---- Primary Affiliation Section ----
+    # ---- Primary Club Section ----
     st.markdown("### Primary Club Affiliation")
     st.markdown(f"**{primary_affiliation['Club']}**")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     col1.metric(
+        "Players at This Club",
+        int(primary_affiliation["Club Players"])
+    )
+
+    col2.metric(
         "Affiliation Share",
         f"{primary_affiliation['Affiliation %']}%"
     )
 
-    col2.metric(
-        "Total Players",
+    col3.metric(
+        "Total Players From This School",
         int(primary_affiliation["Total Players"])
     )
 

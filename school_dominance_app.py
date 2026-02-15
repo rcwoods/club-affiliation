@@ -121,8 +121,8 @@ if "_nav_target" in st.session_state:
 # HEADER
 # --------------------------------------------------
 
-st.title("Club Affiliation Explorer")
-st.caption("McKinnon Basketball Association")
+st.title("McKinnon Basketball Association School-Club Affiliation")
+st.caption("Explore player distribution by school and club")
 
 mode = st.radio(
     "Search by",

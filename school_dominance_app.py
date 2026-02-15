@@ -38,27 +38,26 @@ df = load_data()
 # HEADER
 # --------------------------------------------------
 
-st.title("McKinnon Basketball Association Club Affiliation Explorer")
-st.markdown(
-    """
-Explore how players are distributed across schools and clubs.
-You can search by school or by club.
-"""
+st.title("McKinnon Basketball Association")
+st.subheader("Club Affiliation Explorer")
+
+st.caption(
+    "Explore how players are distributed across schools and clubs."
 )
 
-st.divider()
+st.markdown("")
 
 # --------------------------------------------------
 # SEARCH MODE
 # --------------------------------------------------
 
 mode = st.radio(
-    "Search by:",
+    "Search by",
     ["School", "Club"],
     horizontal=True
 )
 
-st.divider()
+st.markdown("")
 
 # ==================================================
 # SCHOOL MODE
@@ -67,7 +66,7 @@ st.divider()
 if mode == "School":
 
     selected_school = st.selectbox(
-        "Search or Select Your School",
+        "Select a School",
         sorted(df["School"].unique())
     )
 
@@ -77,34 +76,36 @@ if mode == "School":
         .reset_index(drop=True)
     )
 
-    primary_affiliation = school_data.iloc[0]
+    primary = school_data.iloc[0]
 
-    st.markdown("### Most Common Club for This School")
-    st.markdown(f"**{primary_affiliation['Club']}**")
+    # ---- Summary Section ----
+    st.markdown("### Overview")
 
-    st.markdown(
-        f"{int(primary_affiliation['Club Players'])} of "
-        f"{int(primary_affiliation['Total Players'])} players "
-        f"from this school currently play at this club "
-        f"({primary_affiliation['Affiliation %']}%)."
-    )
+    col1, col2, col3 = st.columns(3)
 
-    st.divider()
+    col1.metric("Most Common Club", primary["Club"])
+    col2.metric("Affiliation Share", f"{primary['Affiliation %']}%")
+    col3.metric("Total Players", int(primary["Total Players"]))
 
-    st.markdown("### Top 3 Clubs from This School")
+    st.markdown("")
+
+    # ---- Top 3 Section ----
+    st.markdown("### Top 3 Clubs")
 
     top_3 = school_data.head(3)
 
-    for i, row in top_3.iterrows():
-        st.markdown(
-            f"**{i+1}. {row['Club']}**  \n"
-            f"{int(row['Club Players'])} players "
-            f"({row['Affiliation %']}%)"
+    cols = st.columns(3)
+    for i in range(len(top_3)):
+        cols[i].metric(
+            top_3.loc[i, "Club"],
+            f"{int(top_3.loc[i, 'Club Players'])} players",
+            f"{top_3.loc[i, 'Affiliation %']}%"
         )
 
-    st.divider()
+    st.markdown("")
 
-    st.subheader("Full School Affiliation Breakdown")
+    # ---- Table ----
+    st.markdown("### Full Breakdown")
 
     display_table = school_data[[
         "Club",
@@ -116,7 +117,10 @@ if mode == "School":
 
     st.dataframe(display_table, use_container_width=True, hide_index=True)
 
-    st.subheader("Affiliation Share by Club")
+    st.markdown("")
+
+    # ---- Chart ----
+    st.markdown("### Affiliation Share by Club")
     st.bar_chart(school_data.set_index("Club")["Affiliation %"])
 
 # ==================================================
@@ -126,7 +130,7 @@ if mode == "School":
 if mode == "Club":
 
     selected_club = st.selectbox(
-        "Search or Select a Club",
+        "Select a Club",
         sorted(df["Club"].unique())
     )
 
@@ -136,33 +140,35 @@ if mode == "Club":
         .reset_index(drop=True)
     )
 
-    total_players_club = club_data["Club Players"].sum()
+    total_players = club_data["Club Players"].sum()
     total_schools = club_data.shape[0]
 
-    st.markdown("### School Representation at This Club")
-    st.markdown(f"**{selected_club}**")
+    # ---- Summary Section ----
+    st.markdown("### Overview")
 
-    st.markdown(
-        f"{int(total_players_club)} total players "
-        f"from {total_schools} schools are registered at this club."
-    )
+    col1, col2 = st.columns(2)
 
-    st.divider()
+    col1.metric("Total Players", int(total_players))
+    col2.metric("Schools Represented", total_schools)
 
-    st.markdown("### Top 3 Schools at This Club")
+    st.markdown("")
 
-    top_3_schools = club_data.head(3)
+    # ---- Top 3 Schools ----
+    st.markdown("### Top 3 Schools")
 
-    for i, row in top_3_schools.iterrows():
-        st.markdown(
-            f"**{i+1}. {row['School']}**  \n"
-            f"{int(row['Club Players'])} players "
-            f"({row['Affiliation %']}% of that school)"
+    top_3 = club_data.head(3)
+
+    cols = st.columns(3)
+    for i in range(len(top_3)):
+        cols[i].metric(
+            top_3.loc[i, "School"],
+            f"{int(top_3.loc[i, 'Club Players'])} players"
         )
 
-    st.divider()
+    st.markdown("")
 
-    st.subheader("Full School Breakdown")
+    # ---- Table ----
+    st.markdown("### Full Breakdown")
 
     display_table = club_data[[
         "School",
@@ -174,13 +180,15 @@ if mode == "Club":
 
     st.dataframe(display_table, use_container_width=True, hide_index=True)
 
-    st.subheader("Players by School")
+    st.markdown("")
+
+    # ---- Chart ----
+    st.markdown("### Players by School")
     st.bar_chart(club_data.set_index("School")["Club Players"])
 
 # --------------------------------------------------
 # FOOTER
 # --------------------------------------------------
 
-st.caption(
-    "Data reflects registered player distribution by school and club."
-)
+st.markdown("")
+st.caption("Data reflects registered player distribution by school and club.")

@@ -80,11 +80,7 @@ if mode == "School":
 
         primary = school_data.iloc[0]
 
-        # --------------------------------------------------
-        # SCHOOL HEADER
-        # --------------------------------------------------
-
-        st.markdown(f"## {selected_school}")
+        # Subtle context line
         st.caption(f"{int(primary['Total Players'])} total players from this school")
 
         st.markdown("")
@@ -140,7 +136,6 @@ if mode == "School":
 
         st.markdown("### Affiliation Share by Club")
         st.bar_chart(school_data.set_index("Club")["Affiliation %"])
-
 
 # ==================================================
 # CLUB MODE

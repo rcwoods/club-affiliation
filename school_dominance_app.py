@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # --------------------------------------------------
-# PAGE CONFIG (Wide layout fixes mobile scroll)
+# PAGE CONFIG
 # --------------------------------------------------
 
 st.set_page_config(
@@ -11,19 +11,19 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# GLOBAL STYLING (Mobile Safe)
+# GLOBAL STYLING (Mobile Optimised)
 # --------------------------------------------------
 
 st.markdown("""
 <style>
 
-/* Reduce top padding */
+/* Page padding */
 .block-container {
     padding-top: 1.5rem;
     padding-bottom: 6rem;
 }
 
-/* Clickable names */
+/* Clean clickable buttons */
 button[kind="secondary"] {
     background: none !important;
     border: none !important;
@@ -36,21 +36,24 @@ button[kind="secondary"]:hover {
     text-decoration: underline;
 }
 
-/* Compact breakdown styling */
-.header-row {
-    font-weight: 600;
-    opacity: 0.75;
-    padding-bottom: 4px;
-}
-.compact-row {
-    padding: 2px 0px;
-}
-.divider-line {
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    margin: 4px 0 6px 0;
+/* Section spacing */
+.section-spacing {
+    margin-top: 1.2rem;
 }
 
-/* Prevent bottom trapping */
+/* Breakdown row (responsive) */
+.breakdown-row {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Secondary text */
+.sub-text {
+    font-size: 14px;
+    opacity: 0.75;
+}
+
+/* Hide Streamlit footer */
 footer {visibility: hidden;}
 
 </style>
@@ -137,9 +140,14 @@ if mode == "School":
             .reset_index(drop=True)
         )
 
+        total_players = int(school_data["Total Players"].iloc[0])
         primary = school_data.iloc[0]
 
-        st.caption(f"{int(primary['Total Players'])} total players from this school")
+        st.caption(f"{total_players} total players from this school")
+
+        # ----------------------------
+        # MOST COMMON CLUB
+        # ----------------------------
 
         st.markdown("### Most Common Club")
 
@@ -148,27 +156,49 @@ if mode == "School":
             st.session_state.selected_club = primary["Club"]
             st.rerun()
 
-        st.metric("Affiliation Share", f"{primary['Affiliation %']}%")
+        st.markdown(
+            f"<div class='sub-text'>{int(primary['Club Players'])} players • {primary['Affiliation %']}%</div>",
+            unsafe_allow_html=True
+        )
 
-        st.markdown("### Full Breakdown")
+        # ----------------------------
+        # TOP 3
+        # ----------------------------
 
-        h1, h2, h3 = st.columns([5,1,1], gap="small")
-        h1.markdown('<div class="header-row">Club</div>', unsafe_allow_html=True)
-        h2.markdown('<div class="header-row" style="text-align:right;">Players</div>', unsafe_allow_html=True)
-        h3.markdown('<div class="header-row" style="text-align:right;">% Share</div>', unsafe_allow_html=True)
+        st.markdown("<div class='section-spacing'></div>", unsafe_allow_html=True)
+        st.markdown("### Top 3 Clubs")
 
-        st.markdown('<div class="divider-line"></div>', unsafe_allow_html=True)
+        for i in range(min(3, len(school_data))):
+            row = school_data.iloc[i]
 
-        for i, row in school_data.iterrows():
-            c1, c2, c3 = st.columns([5,1,1], gap="small")
-
-            if c1.button(row["Club"], key=f"club_full_{i}", type="secondary"):
+            if st.button(row["Club"], key=f"top_club_{i}", type="secondary"):
                 st.session_state.mode = "Club"
                 st.session_state.selected_club = row["Club"]
                 st.rerun()
 
-            c2.markdown(f"<div style='text-align:right'>{int(row['Club Players'])}</div>", unsafe_allow_html=True)
-            c3.markdown(f"<div style='text-align:right'>{row['Affiliation %']}%</div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='sub-text'>{int(row['Club Players'])} players • {row['Affiliation %']}%</div>",
+                unsafe_allow_html=True
+            )
+
+        # ----------------------------
+        # FULL BREAKDOWN
+        # ----------------------------
+
+        st.markdown("<div class='section-spacing'></div>", unsafe_allow_html=True)
+        st.markdown("### Full Breakdown")
+
+        for i, row in school_data.iterrows():
+
+            if st.button(row["Club"], key=f"club_full_{i}", type="secondary"):
+                st.session_state.mode = "Club"
+                st.session_state.selected_club = row["Club"]
+                st.rerun()
+
+            st.markdown(
+                f"<div class='sub-text breakdown-row'>{int(row['Club Players'])} players • {row['Affiliation %']}%</div>",
+                unsafe_allow_html=True
+            )
 
 # ==================================================
 # CLUB MODE
@@ -200,32 +230,69 @@ if mode == "Club":
 
         total_players = club_data["Club Players"].sum()
 
-        st.caption(f"{total_players} total players across {club_data.shape[0]} schools")
-
         breakdown = club_data.copy()
         breakdown["Share %"] = (
             breakdown["Club Players"] / total_players * 100
         ).round(2)
 
-        st.markdown("### Full Breakdown")
+        st.caption(f"{total_players} total players across {breakdown.shape[0]} schools")
 
-        h1, h2, h3 = st.columns([5,1,1], gap="small")
-        h1.markdown('<div class="header-row">School</div>', unsafe_allow_html=True)
-        h2.markdown('<div class="header-row" style="text-align:right;">Players</div>', unsafe_allow_html=True)
-        h3.markdown('<div class="header-row" style="text-align:right;">% Share</div>', unsafe_allow_html=True)
+        # ----------------------------
+        # MOST COMMON SCHOOL
+        # ----------------------------
 
-        st.markdown('<div class="divider-line"></div>', unsafe_allow_html=True)
+        primary = breakdown.iloc[0]
 
-        for i, row in breakdown.iterrows():
-            c1, c2, c3 = st.columns([5,1,1], gap="small")
+        st.markdown("### Most Common School")
 
-            if c1.button(row["School"], key=f"school_full_{i}", type="secondary"):
+        if st.button(primary["School"], key="primary_school", type="secondary"):
+            st.session_state.mode = "School"
+            st.session_state.selected_school = primary["School"]
+            st.rerun()
+
+        st.markdown(
+            f"<div class='sub-text'>{int(primary['Club Players'])} players • {primary['Share %']}%</div>",
+            unsafe_allow_html=True
+        )
+
+        # ----------------------------
+        # TOP 3
+        # ----------------------------
+
+        st.markdown("<div class='section-spacing'></div>", unsafe_allow_html=True)
+        st.markdown("### Top 3 Schools")
+
+        for i in range(min(3, len(breakdown))):
+            row = breakdown.iloc[i]
+
+            if st.button(row["School"], key=f"top_school_{i}", type="secondary"):
                 st.session_state.mode = "School"
                 st.session_state.selected_school = row["School"]
                 st.rerun()
 
-            c2.markdown(f"<div style='text-align:right'>{int(row['Club Players'])}</div>", unsafe_allow_html=True)
-            c3.markdown(f"<div style='text-align:right'>{row['Share %']}%</div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='sub-text'>{int(row['Club Players'])} players • {row['Share %']}%</div>",
+                unsafe_allow_html=True
+            )
+
+        # ----------------------------
+        # FULL BREAKDOWN
+        # ----------------------------
+
+        st.markdown("<div class='section-spacing'></div>", unsafe_allow_html=True)
+        st.markdown("### Full Breakdown")
+
+        for i, row in breakdown.iterrows():
+
+            if st.button(row["School"], key=f"school_full_{i}", type="secondary"):
+                st.session_state.mode = "School"
+                st.session_state.selected_school = row["School"]
+                st.rerun()
+
+            st.markdown(
+                f"<div class='sub-text breakdown-row'>{int(row['Club Players'])} players • {row['Share %']}%</div>",
+                unsafe_allow_html=True
+            )
 
 st.divider()
 st.caption("Data reflects registered player distribution by school and club.")

@@ -145,7 +145,7 @@ if mode == "School":
         header1, header2, header3 = st.columns([4, 1, 1])
         header1.markdown("**Club**")
         header2.markdown("**Players**")
-        header3.markdown("** % Share**")
+        header3.markdown("**% Share**")
 
         st.markdown("---")
 
@@ -235,7 +235,7 @@ if mode == "Club":
         header1, header2, header3 = st.columns([4, 1, 1])
         header1.markdown("**School**")
         header2.markdown("**Players**")
-        header3.markdown("** % Share**")
+        header3.markdown("**% Share**")
 
         st.markdown("---")
 

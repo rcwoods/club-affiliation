@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # --------------------------------------------------
-# PAGE CONFIG (MUST BE FIRST STREAMLIT CALL)
+# PAGE CONFIG (MUST BE FIRST)
 # --------------------------------------------------
 
 st.set_page_config(
@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# CLEAN BUTTON STYLE (Removes bulky look)
+# CLEAN BUTTON STYLING
 # --------------------------------------------------
 
 st.markdown("""
@@ -31,7 +31,7 @@ button[kind="secondary"]:hover {
 """, unsafe_allow_html=True)
 
 # --------------------------------------------------
-# DATA LOADING
+# LOAD DATA
 # --------------------------------------------------
 
 @st.cache_data
@@ -50,7 +50,6 @@ def load_data():
     ).round(2)
 
     return df
-
 
 df = load_data()
 
@@ -92,31 +91,38 @@ if mode == "School":
 
     st.markdown("### Find a School")
 
-    search = st.text_input(
-        "Start typing your school name",
-        value=st.session_state.selected_school or ""
-    )
+    # SEARCH STATE
+    if st.session_state.selected_school is None:
 
-    school_list = sorted(df["School"].unique())
+        search = st.text_input("Start typing your school name")
 
-    if search:
+        if search:
+            schools = sorted(df["School"].unique())
 
-        filtered = [
-            s for s in school_list
-            if search.lower() in s.lower()
-        ][:15]
+            filtered = [
+                s for s in schools
+                if search.lower() in s.lower()
+            ][:15]
 
-        if filtered:
-            for school in filtered:
-                if st.button(school, key=f"school_{school}", type="secondary"):
-                    st.session_state.selected_school = school
-                    st.rerun()
-        else:
-            st.write("No matching schools found.")
+            if filtered:
+                for school in filtered:
+                    if st.button(school, key=f"school_{school}", type="secondary"):
+                        st.session_state.selected_school = school
+                        st.rerun()
+            else:
+                st.write("No matching schools found.")
 
-    if st.session_state.selected_school:
+    # SELECTED STATE
+    else:
 
         selected_school = st.session_state.selected_school
+
+        col1, col2 = st.columns([5, 1])
+        col1.markdown(f"**{selected_school}**")
+
+        if col2.button("Change", key="change_school"):
+            st.session_state.selected_school = None
+            st.rerun()
 
         school_data = (
             df[df["School"] == selected_school]
@@ -125,8 +131,6 @@ if mode == "School":
         )
 
         primary = school_data.iloc[0]
-
-        st.divider()
 
         st.caption(f"{int(primary['Total Players'])} total players from this school")
 
@@ -179,31 +183,38 @@ if mode == "Club":
 
     st.markdown("### Find a Club")
 
-    search = st.text_input(
-        "Start typing the club name",
-        value=st.session_state.selected_club or ""
-    )
+    # SEARCH STATE
+    if st.session_state.selected_club is None:
 
-    club_list = sorted(df["Club"].unique())
+        search = st.text_input("Start typing the club name")
 
-    if search:
+        if search:
+            clubs = sorted(df["Club"].unique())
 
-        filtered = [
-            c for c in club_list
-            if search.lower() in c.lower()
-        ][:15]
+            filtered = [
+                c for c in clubs
+                if search.lower() in c.lower()
+            ][:15]
 
-        if filtered:
-            for club in filtered:
-                if st.button(club, key=f"club_{club}", type="secondary"):
-                    st.session_state.selected_club = club
-                    st.rerun()
-        else:
-            st.write("No matching clubs found.")
+            if filtered:
+                for club in filtered:
+                    if st.button(club, key=f"club_{club}", type="secondary"):
+                        st.session_state.selected_club = club
+                        st.rerun()
+            else:
+                st.write("No matching clubs found.")
 
-    if st.session_state.selected_club:
+    # SELECTED STATE
+    else:
 
         selected_club = st.session_state.selected_club
+
+        col1, col2 = st.columns([5, 1])
+        col1.markdown(f"**{selected_club}**")
+
+        if col2.button("Change", key="change_club"):
+            st.session_state.selected_club = None
+            st.rerun()
 
         club_data = (
             df[df["Club"] == selected_club]
@@ -213,8 +224,6 @@ if mode == "Club":
 
         total_players = club_data["Club Players"].sum()
         primary = club_data.iloc[0]
-
-        st.divider()
 
         st.caption(f"{total_players} total players across {club_data.shape[0]} schools")
 
@@ -242,9 +251,7 @@ if mode == "Club":
                 st.rerun()
 
             col2.write(int(row["Club Players"]))
-
-            school_share = round((row["Club Players"] / total_players) * 100, 2)
-            col3.write(f"{school_share}%")
+            col3.write(f"{round((row['Club Players']/total_players)*100, 2)}%")
 
         # Full Breakdown
         st.markdown("### Full Breakdown")

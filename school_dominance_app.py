@@ -17,7 +17,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 
-/* Reduce excess top spacing */
+/* Reduce top spacing */
 .block-container {
     padding-top: 1.2rem;
     padding-bottom: 5rem;
@@ -38,19 +38,19 @@ button[kind="secondary"]:hover {
 
 /* Section headers */
 h3 {
-    margin-top: 2.2rem !important;
-    margin-bottom: 1rem !important;
+    margin-top: 2rem !important;
+    margin-bottom: 0.8rem !important;
     font-size: 1.4rem !important;
 }
 
-/* Subtext styling */
+/* Sub text */
 .sub-text {
     font-size: 0.9rem;
     opacity: 0.75;
     margin-bottom: 1.2rem;
 }
 
-/* Breakdown row */
+/* Breakdown rows */
 .breakdown-row {
     padding: 8px 0;
     border-bottom: 1px solid rgba(255,255,255,0.08);
@@ -95,13 +95,13 @@ df = load_data()
 # --------------------------------------------------
 
 if "mode" not in st.session_state:
-    st.session_state.mode = "School"
+    st.session_state["mode"] = "School"
 
 if "selected_school" not in st.session_state:
-    st.session_state.selected_school = None
+    st.session_state["selected_school"] = None
 
 if "selected_club" not in st.session_state:
-    st.session_state.selected_club = None
+    st.session_state["selected_club"] = None
 
 # --------------------------------------------------
 # HEADER
@@ -110,7 +110,7 @@ if "selected_club" not in st.session_state:
 st.title("Club Affiliation Explorer")
 st.caption("McKinnon Basketball Association")
 
-mode = st.radio(
+st.radio(
     "Search by",
     ["School", "Club"],
     horizontal=True,
@@ -123,7 +123,7 @@ st.divider()
 # SCHOOL MODE
 # ==================================================
 
-if st.session_state.mode == "School":
+if st.session_state["mode"] == "School":
 
     schools = sorted(df["School"].unique())
 
@@ -134,7 +134,7 @@ if st.session_state.mode == "School":
         placeholder="Start typing your school name..."
     )
 
-    selected_school = st.session_state.selected_school
+    selected_school = st.session_state["selected_school"]
 
     if selected_school:
 
@@ -149,15 +149,13 @@ if st.session_state.mode == "School":
 
         st.caption(f"{total_players} total players from this school")
 
-        # ----------------------------
-        # MOST COMMON CLUB
-        # ----------------------------
+        # ---------------- MOST COMMON ----------------
 
         st.markdown("### Most Common Club")
 
         if st.button(primary["Club"], type="secondary"):
-            st.session_state.mode = "Club"
-            st.session_state.selected_club = primary["Club"]
+            st.session_state["mode"] = "Club"
+            st.session_state["selected_club"] = primary["Club"]
             st.rerun()
 
         st.markdown(
@@ -165,9 +163,7 @@ if st.session_state.mode == "School":
             unsafe_allow_html=True
         )
 
-        # ----------------------------
-        # TOP 3
-        # ----------------------------
+        # ---------------- TOP 3 ----------------
 
         st.markdown("### Top 3 Clubs")
 
@@ -175,8 +171,8 @@ if st.session_state.mode == "School":
             row = school_data.iloc[i]
 
             if st.button(row["Club"], key=f"top_club_{i}", type="secondary"):
-                st.session_state.mode = "Club"
-                st.session_state.selected_club = row["Club"]
+                st.session_state["mode"] = "Club"
+                st.session_state["selected_club"] = row["Club"]
                 st.rerun()
 
             st.markdown(
@@ -184,17 +180,15 @@ if st.session_state.mode == "School":
                 unsafe_allow_html=True
             )
 
-        # ----------------------------
-        # FULL BREAKDOWN
-        # ----------------------------
+        # ---------------- FULL BREAKDOWN ----------------
 
         st.markdown("### Full Breakdown")
 
         for i, row in school_data.iterrows():
 
             if st.button(row["Club"], key=f"club_full_{i}", type="secondary"):
-                st.session_state.mode = "Club"
-                st.session_state.selected_club = row["Club"]
+                st.session_state["mode"] = "Club"
+                st.session_state["selected_club"] = row["Club"]
                 st.rerun()
 
             st.markdown(
@@ -202,9 +196,7 @@ if st.session_state.mode == "School":
                 unsafe_allow_html=True
             )
 
-        # ----------------------------
-        # CHART
-        # ----------------------------
+        # ---------------- CHART ----------------
 
         st.markdown("### Distribution Chart")
         chart_data = school_data.set_index("Club")["Affiliation %"]
@@ -214,7 +206,7 @@ if st.session_state.mode == "School":
 # CLUB MODE
 # ==================================================
 
-if st.session_state.mode == "Club":
+if st.session_state["mode"] == "Club":
 
     clubs = sorted(df["Club"].unique())
 
@@ -225,7 +217,7 @@ if st.session_state.mode == "Club":
         placeholder="Start typing your club name..."
     )
 
-    selected_club = st.session_state.selected_club
+    selected_club = st.session_state["selected_club"]
 
     if selected_club:
 
@@ -246,15 +238,13 @@ if st.session_state.mode == "Club":
 
         primary = breakdown.iloc[0]
 
-        # ----------------------------
-        # MOST COMMON SCHOOL
-        # ----------------------------
+        # ---------------- MOST COMMON ----------------
 
         st.markdown("### Most Common School")
 
         if st.button(primary["School"], type="secondary"):
-            st.session_state.mode = "School"
-            st.session_state.selected_school = primary["School"]
+            st.session_state["mode"] = "School"
+            st.session_state["selected_school"] = primary["School"]
             st.rerun()
 
         st.markdown(
@@ -262,9 +252,7 @@ if st.session_state.mode == "Club":
             unsafe_allow_html=True
         )
 
-        # ----------------------------
-        # TOP 3
-        # ----------------------------
+        # ---------------- TOP 3 ----------------
 
         st.markdown("### Top 3 Schools")
 
@@ -272,8 +260,8 @@ if st.session_state.mode == "Club":
             row = breakdown.iloc[i]
 
             if st.button(row["School"], key=f"top_school_{i}", type="secondary"):
-                st.session_state.mode = "School"
-                st.session_state.selected_school = row["School"]
+                st.session_state["mode"] = "School"
+                st.session_state["selected_school"] = row["School"]
                 st.rerun()
 
             st.markdown(
@@ -281,17 +269,15 @@ if st.session_state.mode == "Club":
                 unsafe_allow_html=True
             )
 
-        # ----------------------------
-        # FULL BREAKDOWN
-        # ----------------------------
+        # ---------------- FULL BREAKDOWN ----------------
 
         st.markdown("### Full Breakdown")
 
         for i, row in breakdown.iterrows():
 
             if st.button(row["School"], key=f"school_full_{i}", type="secondary"):
-                st.session_state.mode = "School"
-                st.session_state.selected_school = row["School"]
+                st.session_state["mode"] = "School"
+                st.session_state["selected_school"] = row["School"]
                 st.rerun()
 
             st.markdown(
@@ -299,9 +285,7 @@ if st.session_state.mode == "Club":
                 unsafe_allow_html=True
             )
 
-        # ----------------------------
-        # CHART
-        # ----------------------------
+        # ---------------- CHART ----------------
 
         st.markdown("### Distribution Chart")
         chart_data = breakdown.set_index("School")["Share %"]

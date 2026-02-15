@@ -35,6 +35,19 @@ def load_data():
 df = load_data()
 
 # --------------------------------------------------
+# SESSION STATE INITIALIZATION
+# --------------------------------------------------
+
+if "mode" not in st.session_state:
+    st.session_state.mode = "School"
+
+if "selected_school" not in st.session_state:
+    st.session_state.selected_school = None
+
+if "selected_club" not in st.session_state:
+    st.session_state.selected_club = None
+
+# --------------------------------------------------
 # HEADER
 # --------------------------------------------------
 
@@ -45,14 +58,17 @@ st.caption("Explore how players are distributed across schools and clubs.")
 st.markdown("")
 
 # --------------------------------------------------
-# SEARCH MODE
+# MODE SELECTOR
 # --------------------------------------------------
 
 mode = st.radio(
     "Search by",
     ["School", "Club"],
+    index=0 if st.session_state.mode == "School" else 1,
     horizontal=True
 )
+
+st.session_state.mode = mode
 
 st.markdown("")
 
@@ -60,17 +76,18 @@ st.markdown("")
 # SCHOOL MODE
 # ==================================================
 
-if mode == "School":
+if st.session_state.mode == "School":
 
-    school_options = ["Select a School"] + sorted(df["School"].unique())
-
+    school_list = sorted(df["School"].unique())
     selected_school = st.selectbox(
         "School",
-        school_options,
-        index=0
+        ["Select a School"] + school_list,
+        index=0 if st.session_state.selected_school is None else school_list.index(st.session_state.selected_school) + 1
     )
 
     if selected_school != "Select a School":
+
+        st.session_state.selected_school = selected_school
 
         school_data = (
             df[df["School"] == selected_school]
@@ -80,78 +97,69 @@ if mode == "School":
 
         primary = school_data.iloc[0]
 
-        # Subtle context line
         st.caption(f"{int(primary['Total Players'])} total players from this school")
 
         st.markdown("")
 
-        # --------------------------------------------------
-        # MOST COMMON CLUB
-        # --------------------------------------------------
-
+        # Most Common Club (Clickable)
         st.markdown("### Most Common Club")
-        st.markdown(f"#### {primary['Club']}")
+
+        if st.button(primary["Club"], key="primary_club"):
+            st.session_state.mode = "Club"
+            st.session_state.selected_club = primary["Club"]
+            st.rerun()
+
         st.metric("Affiliation Share", f"{primary['Affiliation %']}%")
 
         st.markdown("")
 
-        # --------------------------------------------------
-        # TOP 3 CLUBS
-        # --------------------------------------------------
-
+        # Top 3 Clubs
         st.markdown("### Top 3 Clubs")
 
         top_3 = school_data.head(3)
-        cols = st.columns(3)
 
-        for i in range(len(top_3)):
-            with cols[i]:
-                st.markdown(f"**{top_3.loc[i, 'Club']}**")
-                st.markdown(f"{int(top_3.loc[i, 'Club Players'])} players")
-                st.markdown(f"{top_3.loc[i, 'Affiliation %']}%")
+        for i, row in top_3.iterrows():
+            col1, col2 = st.columns([3, 1])
+
+            if col1.button(row["Club"], key=f"club_{i}"):
+                st.session_state.mode = "Club"
+                st.session_state.selected_club = row["Club"]
+                st.rerun()
+
+            col2.write(f"{row['Affiliation %']}%")
 
         st.markdown("")
 
-        # --------------------------------------------------
-        # FULL BREAKDOWN
-        # --------------------------------------------------
-
+        # Full Breakdown
         st.markdown("### Full Breakdown")
 
-        display_table = school_data[[
-            "Club",
-            "Club Players",
-            "Affiliation %"
-        ]].rename(columns={
-            "Club Players": "Players at Club"
-        })
+        for i, row in school_data.iterrows():
+            col1, col2, col3 = st.columns([3, 1, 1])
 
-        st.dataframe(display_table, use_container_width=True, hide_index=True)
+            if col1.button(row["Club"], key=f"club_full_{i}"):
+                st.session_state.mode = "Club"
+                st.session_state.selected_club = row["Club"]
+                st.rerun()
 
-        st.markdown("")
-
-        # --------------------------------------------------
-        # CHART
-        # --------------------------------------------------
-
-        st.markdown("### Affiliation Share by Club")
-        st.bar_chart(school_data.set_index("Club")["Affiliation %"])
+            col2.write(int(row["Club Players"]))
+            col3.write(f"{row['Affiliation %']}%")
 
 # ==================================================
 # CLUB MODE
 # ==================================================
 
-if mode == "Club":
+if st.session_state.mode == "Club":
 
-    club_options = ["Select a Club"] + sorted(df["Club"].unique())
-
+    club_list = sorted(df["Club"].unique())
     selected_club = st.selectbox(
         "Club",
-        club_options,
-        index=0
+        ["Select a Club"] + club_list,
+        index=0 if st.session_state.selected_club is None else club_list.index(st.session_state.selected_club) + 1
     )
 
     if selected_club != "Select a Club":
+
+        st.session_state.selected_club = selected_club
 
         club_data = (
             df[df["Club"] == selected_club]
@@ -160,58 +168,39 @@ if mode == "Club":
         )
 
         total_players = club_data["Club Players"].sum()
-        total_schools = club_data.shape[0]
 
-        # --------------------------------------------------
-        # CLUB HEADER
-        # --------------------------------------------------
-
-        st.markdown(f"## {selected_club}")
-        st.caption(f"{total_players} total players across {total_schools} schools")
+        st.caption(f"{total_players} total players across {club_data.shape[0]} schools")
 
         st.markdown("")
 
-        # --------------------------------------------------
-        # TOP 3 SCHOOLS
-        # --------------------------------------------------
-
+        # Top 3 Schools
         st.markdown("### Top 3 Schools")
 
-        top_3 = club_data.head(3)
-        cols = st.columns(3)
+        for i, row in club_data.head(3).iterrows():
+            col1, col2 = st.columns([3, 1])
 
-        for i in range(len(top_3)):
-            with cols[i]:
-                st.markdown(f"**{top_3.loc[i, 'School']}**")
-                st.markdown(f"{int(top_3.loc[i, 'Club Players'])} players")
-                st.markdown(f"{top_3.loc[i, 'Affiliation %']}%")
+            if col1.button(row["School"], key=f"school_{i}"):
+                st.session_state.mode = "School"
+                st.session_state.selected_school = row["School"]
+                st.rerun()
+
+            col2.write(int(row["Club Players"]))
 
         st.markdown("")
 
-        # --------------------------------------------------
-        # FULL BREAKDOWN
-        # --------------------------------------------------
-
+        # Full Breakdown
         st.markdown("### Full Breakdown")
 
-        display_table = club_data[[
-            "School",
-            "Club Players",
-            "Affiliation %"
-        ]].rename(columns={
-            "Club Players": "Players from School"
-        })
+        for i, row in club_data.iterrows():
+            col1, col2, col3 = st.columns([3, 1, 1])
 
-        st.dataframe(display_table, use_container_width=True, hide_index=True)
+            if col1.button(row["School"], key=f"school_full_{i}"):
+                st.session_state.mode = "School"
+                st.session_state.selected_school = row["School"]
+                st.rerun()
 
-        st.markdown("")
-
-        # --------------------------------------------------
-        # CHART
-        # --------------------------------------------------
-
-        st.markdown("### Players by School")
-        st.bar_chart(club_data.set_index("School")["Club Players"])
+            col2.write(int(row["Club Players"]))
+            col3.write(f"{row['Affiliation %']}%")
 
 # --------------------------------------------------
 # FOOTER

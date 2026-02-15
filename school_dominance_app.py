@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # --------------------------------------------------
-# PAGE CONFIG (Must Be First Streamlit Command)
+# PAGE CONFIG (MUST BE FIRST STREAMLIT CALL)
 # --------------------------------------------------
 
 st.set_page_config(
@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# REMOVE DEFAULT BUTTON STYLING
+# CLEAN BUTTON STYLE (Removes bulky look)
 # --------------------------------------------------
 
 st.markdown("""
@@ -90,21 +90,33 @@ st.divider()
 
 if mode == "School":
 
-    school_list = sorted(df["School"].unique())
+    st.markdown("### Find a School")
 
-    selected_school = st.selectbox(
-        "Select a School",
-        ["Select a School"] + school_list,
-        index=(
-            school_list.index(st.session_state.selected_school) + 1
-            if st.session_state.selected_school in school_list
-            else 0
-        )
+    search = st.text_input(
+        "Start typing your school name",
+        value=st.session_state.selected_school or ""
     )
 
-    if selected_school != "Select a School":
+    school_list = sorted(df["School"].unique())
 
-        st.session_state.selected_school = selected_school
+    if search:
+
+        filtered = [
+            s for s in school_list
+            if search.lower() in s.lower()
+        ][:15]
+
+        if filtered:
+            for school in filtered:
+                if st.button(school, key=f"school_{school}", type="secondary"):
+                    st.session_state.selected_school = school
+                    st.rerun()
+        else:
+            st.write("No matching schools found.")
+
+    if st.session_state.selected_school:
+
+        selected_school = st.session_state.selected_school
 
         school_data = (
             df[df["School"] == selected_school]
@@ -114,7 +126,8 @@ if mode == "School":
 
         primary = school_data.iloc[0]
 
-        # Context
+        st.divider()
+
         st.caption(f"{int(primary['Total Players'])} total players from this school")
 
         # Most Common Club
@@ -134,7 +147,7 @@ if mode == "School":
 
             col1, col2, col3 = st.columns([4, 1, 1])
 
-            if col1.button(row["Club"], key=f"club_top_{i}", type="secondary"):
+            if col1.button(row["Club"], key=f"club_{i}", type="secondary"):
                 st.session_state.mode = "Club"
                 st.session_state.selected_club = row["Club"]
                 st.rerun()
@@ -142,7 +155,7 @@ if mode == "School":
             col2.write(int(row["Club Players"]))
             col3.write(f"{row['Affiliation %']}%")
 
-        # Full Breakdown Table
+        # Full Breakdown
         st.markdown("### Full Breakdown")
 
         display_table = school_data[[
@@ -155,10 +168,8 @@ if mode == "School":
 
         st.dataframe(display_table, use_container_width=True, hide_index=True)
 
-        # Chart
         st.markdown("### Affiliation Share")
         st.bar_chart(school_data.set_index("Club")["Affiliation %"])
-
 
 # ==================================================
 # CLUB MODE
@@ -166,21 +177,33 @@ if mode == "School":
 
 if mode == "Club":
 
-    club_list = sorted(df["Club"].unique())
+    st.markdown("### Find a Club")
 
-    selected_club = st.selectbox(
-        "Select a Club",
-        ["Select a Club"] + club_list,
-        index=(
-            club_list.index(st.session_state.selected_club) + 1
-            if st.session_state.selected_club in club_list
-            else 0
-        )
+    search = st.text_input(
+        "Start typing the club name",
+        value=st.session_state.selected_club or ""
     )
 
-    if selected_club != "Select a Club":
+    club_list = sorted(df["Club"].unique())
 
-        st.session_state.selected_club = selected_club
+    if search:
+
+        filtered = [
+            c for c in club_list
+            if search.lower() in c.lower()
+        ][:15]
+
+        if filtered:
+            for club in filtered:
+                if st.button(club, key=f"club_{club}", type="secondary"):
+                    st.session_state.selected_club = club
+                    st.rerun()
+        else:
+            st.write("No matching clubs found.")
+
+    if st.session_state.selected_club:
+
+        selected_club = st.session_state.selected_club
 
         club_data = (
             df[df["Club"] == selected_club]
@@ -191,10 +214,11 @@ if mode == "Club":
         total_players = club_data["Club Players"].sum()
         primary = club_data.iloc[0]
 
-        # Context (same style as school)
+        st.divider()
+
         st.caption(f"{total_players} total players across {club_data.shape[0]} schools")
 
-        # Most Represented School (mirror structure)
+        # Most Represented School
         st.markdown("### Most Represented School")
 
         if st.button(primary["School"], key="primary_school", type="secondary"):
@@ -212,7 +236,7 @@ if mode == "Club":
 
             col1, col2, col3 = st.columns([4, 1, 1])
 
-            if col1.button(row["School"], key=f"school_top_{i}", type="secondary"):
+            if col1.button(row["School"], key=f"school_{i}", type="secondary"):
                 st.session_state.mode = "School"
                 st.session_state.selected_school = row["School"]
                 st.rerun()
@@ -240,7 +264,6 @@ if mode == "Club":
 
         st.dataframe(display_table, use_container_width=True, hide_index=True)
 
-        # Chart
         st.markdown("### Players by School")
         st.bar_chart(club_data.set_index("School")["Club Players"])
 

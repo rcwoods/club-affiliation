@@ -189,15 +189,28 @@ if mode == "Club":
         )
 
         total_players = club_data["Club Players"].sum()
+        primary = club_data.iloc[0]
 
+        # Context (same style as school)
         st.caption(f"{total_players} total players across {club_data.shape[0]} schools")
+
+        # Most Represented School (mirror structure)
+        st.markdown("### Most Represented School")
+
+        if st.button(primary["School"], key="primary_school", type="secondary"):
+            st.session_state.mode = "School"
+            st.session_state.selected_school = primary["School"]
+            st.rerun()
+
+        share = round((primary["Club Players"] / total_players) * 100, 2)
+        st.metric("Share of Club Players", f"{share}%")
 
         # Top 3 Schools
         st.markdown("### Top 3 Schools")
 
         for i, row in club_data.head(3).iterrows():
 
-            col1, col2 = st.columns([4, 1])
+            col1, col2, col3 = st.columns([4, 1, 1])
 
             if col1.button(row["School"], key=f"school_top_{i}", type="secondary"):
                 st.session_state.mode = "School"
@@ -206,13 +219,21 @@ if mode == "Club":
 
             col2.write(int(row["Club Players"]))
 
-        # Full Breakdown Table
+            school_share = round((row["Club Players"] / total_players) * 100, 2)
+            col3.write(f"{school_share}%")
+
+        # Full Breakdown
         st.markdown("### Full Breakdown")
 
-        display_table = club_data[[
+        breakdown = club_data.copy()
+        breakdown["Share %"] = (
+            breakdown["Club Players"] / total_players * 100
+        ).round(2)
+
+        display_table = breakdown[[
             "School",
             "Club Players",
-            "Affiliation %"
+            "Share %"
         ]].rename(columns={
             "Club Players": "Players from School"
         })

@@ -45,7 +45,18 @@ button[kind="secondary"]:hover {
 .sub-text {
     font-size: 15px;
     opacity: 0.75;
-    margin-bottom: 14px;
+    margin-bottom: 6px;
+}
+
+.rank-number {
+    font-weight: 700;
+    opacity: 0.6;
+    margin-right: 8px;
+}
+
+.breakdown-row {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
 footer {visibility: hidden;}
@@ -89,7 +100,7 @@ if "selected_club" not in st.session_state:
     st.session_state.selected_club = None
 
 # --------------------------------------------------
-# SAFE NAVIGATION FUNCTION
+# NAVIGATION FUNCTIONS
 # --------------------------------------------------
 
 def go_to_school(school):
@@ -158,7 +169,7 @@ if mode == "School":
 
         st.caption(f"{total_players} total players from this school")
 
-        # Most Common Club
+        # Most Common
         st.markdown('<div class="section-title">Most Common Club</div>', unsafe_allow_html=True)
 
         if st.button(primary["Club"], key="primary_club", type="secondary"):
@@ -169,44 +180,29 @@ if mode == "School":
             unsafe_allow_html=True
         )
 
-        # Top 3
-        st.markdown('<div class="section-title">Top 3 Clubs</div>', unsafe_allow_html=True)
-
-        for i in range(min(3, len(school_data))):
-            row = school_data.iloc[i]
-
-            if st.button(row["Club"], key=f"top_club_{i}", type="secondary"):
-                go_to_club(row["Club"])
-
-            st.markdown(
-                f'<div class="sub-text">{int(row["Club Players"])} players • {row["Affiliation %"]}%</div>',
-                unsafe_allow_html=True
-            )
-
-        # Full Breakdown
+        # Full Breakdown with Ranking
         st.markdown('<div class="section-title">Full Breakdown</div>', unsafe_allow_html=True)
 
         for i, row in school_data.iterrows():
 
-            if st.button(row["Club"], key=f"club_full_{i}", type="secondary"):
-                go_to_club(row["Club"])
+            col1, col2 = st.columns([6, 2])
 
-            st.markdown(
-                f'<div class="sub-text">{int(row["Club Players"])} players • {row["Affiliation %"]}%</div>',
-                unsafe_allow_html=True
-            )
+            with col1:
+                st.markdown(
+                    f'<span class="rank-number">{i+1}.</span>',
+                    unsafe_allow_html=True
+                )
 
-        # Chart
-        st.markdown('<div class="section-title">Distribution Chart</div>', unsafe_allow_html=True)
+                if st.button(row["Club"], key=f"club_full_{i}", type="secondary"):
+                    go_to_club(row["Club"])
 
-        fig = px.bar(
-            school_data.head(10),
-            x="Club",
-            y="Affiliation %",
-            text="Affiliation %",
-        )
-        fig.update_layout(showlegend=False)
-        st.plotly_chart(fig, use_container_width=True)
+            with col2:
+                st.markdown(
+                    f'<div style="text-align:right">{int(row["Club Players"])} • {row["Affiliation %"]}%</div>',
+                    unsafe_allow_html=True
+                )
+
+            st.markdown('<div class="breakdown-row"></div>', unsafe_allow_html=True)
 
 # ==================================================
 # CLUB MODE
@@ -249,57 +245,29 @@ if mode == "Club":
 
         st.caption(f"{total_players} total players across {breakdown.shape[0]} schools")
 
-        primary = breakdown.iloc[0]
-
-        # Most Common School
-        st.markdown('<div class="section-title">Most Common School</div>', unsafe_allow_html=True)
-
-        if st.button(primary["School"], key="primary_school", type="secondary"):
-            go_to_school(primary["School"])
-
-        st.markdown(
-            f'<div class="sub-text">{int(primary["Club Players"])} players • {primary["Share %"]}%</div>',
-            unsafe_allow_html=True
-        )
-
-        # Top 3
-        st.markdown('<div class="section-title">Top 3 Schools</div>', unsafe_allow_html=True)
-
-        for i in range(min(3, len(breakdown))):
-            row = breakdown.iloc[i]
-
-            if st.button(row["School"], key=f"top_school_{i}", type="secondary"):
-                go_to_school(row["School"])
-
-            st.markdown(
-                f'<div class="sub-text">{int(row["Club Players"])} players • {row["Share %"]}%</div>',
-                unsafe_allow_html=True
-            )
-
-        # Full Breakdown
+        # Full Breakdown with Ranking
         st.markdown('<div class="section-title">Full Breakdown</div>', unsafe_allow_html=True)
 
         for i, row in breakdown.iterrows():
 
-            if st.button(row["School"], key=f"school_full_{i}", type="secondary"):
-                go_to_school(row["School"])
+            col1, col2 = st.columns([6, 2])
 
-            st.markdown(
-                f'<div class="sub-text">{int(row["Club Players"])} players • {row["Share %"]}%</div>',
-                unsafe_allow_html=True
-            )
+            with col1:
+                st.markdown(
+                    f'<span class="rank-number">{i+1}.</span>',
+                    unsafe_allow_html=True
+                )
 
-        # Chart
-        st.markdown('<div class="section-title">Distribution Chart</div>', unsafe_allow_html=True)
+                if st.button(row["School"], key=f"school_full_{i}", type="secondary"):
+                    go_to_school(row["School"])
 
-        fig = px.bar(
-            breakdown.head(10),
-            x="School",
-            y="Share %",
-            text="Share %",
-        )
-        fig.update_layout(showlegend=False)
-        st.plotly_chart(fig, use_container_width=True)
+            with col2:
+                st.markdown(
+                    f'<div style="text-align:right">{int(row["Club Players"])} • {row["Share %"]}%</div>',
+                    unsafe_allow_html=True
+                )
+
+            st.markdown('<div class="breakdown-row"></div>', unsafe_allow_html=True)
 
 st.divider()
 st.caption("Data reflects registered player distribution by school and club.")

@@ -11,13 +11,12 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# GLOBAL STYLING (Cleaner + Tighter Layout)
+# GLOBAL STYLING
 # --------------------------------------------------
 
 st.markdown("""
 <style>
 
-/* Clickable names */
 button[kind="secondary"] {
     background: none !important;
     border: none !important;
@@ -30,7 +29,6 @@ button[kind="secondary"]:hover {
     text-decoration: underline;
 }
 
-/* Compact table styling */
 .header-row {
     font-weight: 600;
     opacity: 0.75;
@@ -44,7 +42,6 @@ button[kind="secondary"]:hover {
     margin: 4px 0 6px 0;
 }
 
-/* Reduce overall vertical spacing */
 .block-container {
     padding-top: 2rem;
 }
@@ -98,8 +95,7 @@ st.caption("McKinnon Basketball Association")
 mode = st.radio(
     "Search by",
     ["School", "Club"],
-    horizontal=True,
-    index=0 if st.session_state.mode == "School" else 1
+    horizontal=True
 )
 
 st.session_state.mode = mode
@@ -113,18 +109,16 @@ if mode == "School":
 
     schools = sorted(df["School"].unique())
 
-    selected_school = st.selectbox(
+    selected = st.multiselect(
         "Select a School",
-        ["Select a School"] + schools,
-        index=(
-            schools.index(st.session_state.selected_school) + 1
-            if st.session_state.selected_school in schools
-            else 0
-        )
+        schools,
+        default=[st.session_state.selected_school] if st.session_state.selected_school else [],
+        max_selections=1
     )
 
-    if selected_school != "Select a School":
+    if selected:
 
+        selected_school = selected[0]
         st.session_state.selected_school = selected_school
 
         school_data = (
@@ -137,7 +131,6 @@ if mode == "School":
 
         st.caption(f"{int(primary['Total Players'])} total players from this school")
 
-        # Most Common Club
         st.markdown("### Most Common Club")
 
         if st.button(primary["Club"], key="primary_club", type="secondary"):
@@ -147,24 +140,9 @@ if mode == "School":
 
         st.metric("Affiliation Share", f"{primary['Affiliation %']}%")
 
-        # Top 3 Clubs
-        st.markdown("### Top 3 Clubs")
-
-        for i, row in school_data.head(3).iterrows():
-            col1, col2, col3 = st.columns([5, 1, 1], gap="small")
-
-            if col1.button(row["Club"], key=f"club_top_{i}", type="secondary"):
-                st.session_state.mode = "Club"
-                st.session_state.selected_club = row["Club"]
-                st.rerun()
-
-            col2.markdown(f"<div style='text-align:right'>{int(row['Club Players'])}</div>", unsafe_allow_html=True)
-            col3.markdown(f"<div style='text-align:right'>{row['Affiliation %']}%</div>", unsafe_allow_html=True)
-
-        # Full Breakdown
         st.markdown("### Full Breakdown")
 
-        h1, h2, h3 = st.columns([5, 1, 1], gap="small")
+        h1, h2, h3 = st.columns([5,1,1], gap="small")
         h1.markdown('<div class="header-row">Club</div>', unsafe_allow_html=True)
         h2.markdown('<div class="header-row" style="text-align:right;">Players</div>', unsafe_allow_html=True)
         h3.markdown('<div class="header-row" style="text-align:right;">% Share</div>', unsafe_allow_html=True)
@@ -172,25 +150,15 @@ if mode == "School":
         st.markdown('<div class="divider-line"></div>', unsafe_allow_html=True)
 
         for i, row in school_data.iterrows():
+            c1, c2, c3 = st.columns([5,1,1], gap="small")
 
-            c1, c2, c3 = st.columns([5, 1, 1], gap="small")
-
-            if c1.button(row["Club"], key=f"club_full_{i}", type="secondary"):
+            if c1.button(row["Club"], key=f"club_{i}", type="secondary"):
                 st.session_state.mode = "Club"
                 st.session_state.selected_club = row["Club"]
                 st.rerun()
 
-            c2.markdown(
-                f'<div class="compact-row" style="text-align:right;">{int(row["Club Players"])}</div>',
-                unsafe_allow_html=True
-            )
-            c3.markdown(
-                f'<div class="compact-row" style="text-align:right;">{row["Affiliation %"]}%</div>',
-                unsafe_allow_html=True
-            )
-
-        st.markdown("### Affiliation Share")
-        st.bar_chart(school_data.set_index("Club")["Affiliation %"])
+            c2.markdown(f"<div style='text-align:right'>{int(row['Club Players'])}</div>", unsafe_allow_html=True)
+            c3.markdown(f"<div style='text-align:right'>{row['Affiliation %']}%</div>", unsafe_allow_html=True)
 
 # ==================================================
 # CLUB MODE
@@ -200,18 +168,16 @@ if mode == "Club":
 
     clubs = sorted(df["Club"].unique())
 
-    selected_club = st.selectbox(
+    selected = st.multiselect(
         "Select a Club",
-        ["Select a Club"] + clubs,
-        index=(
-            clubs.index(st.session_state.selected_club) + 1
-            if st.session_state.selected_club in clubs
-            else 0
-        )
+        clubs,
+        default=[st.session_state.selected_club] if st.session_state.selected_club else [],
+        max_selections=1
     )
 
-    if selected_club != "Select a Club":
+    if selected:
 
+        selected_club = selected[0]
         st.session_state.selected_club = selected_club
 
         club_data = (
@@ -221,36 +187,9 @@ if mode == "Club":
         )
 
         total_players = club_data["Club Players"].sum()
-        primary = club_data.iloc[0]
 
         st.caption(f"{total_players} total players across {club_data.shape[0]} schools")
 
-        # Most Represented School
-        st.markdown("### Most Represented School")
-
-        if st.button(primary["School"], key="primary_school", type="secondary"):
-            st.session_state.mode = "School"
-            st.session_state.selected_school = primary["School"]
-            st.rerun()
-
-        share = round((primary["Club Players"] / total_players) * 100, 2)
-        st.metric("Share of Club Players", f"{share}%")
-
-        # Top 3 Schools
-        st.markdown("### Top 3 Schools")
-
-        for i, row in club_data.head(3).iterrows():
-            col1, col2, col3 = st.columns([5, 1, 1], gap="small")
-
-            if col1.button(row["School"], key=f"school_top_{i}", type="secondary"):
-                st.session_state.mode = "School"
-                st.session_state.selected_school = row["School"]
-                st.rerun()
-
-            col2.markdown(f"<div style='text-align:right'>{int(row['Club Players'])}</div>", unsafe_allow_html=True)
-            col3.markdown(f"<div style='text-align:right'>{round((row['Club Players']/total_players)*100, 2)}%</div>", unsafe_allow_html=True)
-
-        # Full Breakdown
         st.markdown("### Full Breakdown")
 
         breakdown = club_data.copy()
@@ -258,7 +197,7 @@ if mode == "Club":
             breakdown["Club Players"] / total_players * 100
         ).round(2)
 
-        h1, h2, h3 = st.columns([5, 1, 1], gap="small")
+        h1, h2, h3 = st.columns([5,1,1], gap="small")
         h1.markdown('<div class="header-row">School</div>', unsafe_allow_html=True)
         h2.markdown('<div class="header-row" style="text-align:right;">Players</div>', unsafe_allow_html=True)
         h3.markdown('<div class="header-row" style="text-align:right;">% Share</div>', unsafe_allow_html=True)
@@ -266,25 +205,15 @@ if mode == "Club":
         st.markdown('<div class="divider-line"></div>', unsafe_allow_html=True)
 
         for i, row in breakdown.iterrows():
+            c1, c2, c3 = st.columns([5,1,1], gap="small")
 
-            c1, c2, c3 = st.columns([5, 1, 1], gap="small")
-
-            if c1.button(row["School"], key=f"school_full_{i}", type="secondary"):
+            if c1.button(row["School"], key=f"school_{i}", type="secondary"):
                 st.session_state.mode = "School"
                 st.session_state.selected_school = row["School"]
                 st.rerun()
 
-            c2.markdown(
-                f'<div class="compact-row" style="text-align:right;">{int(row["Club Players"])}</div>',
-                unsafe_allow_html=True
-            )
-            c3.markdown(
-                f'<div class="compact-row" style="text-align:right;">{row["Share %"]}%</div>',
-                unsafe_allow_html=True
-            )
-
-        st.markdown("### Players by School")
-        st.bar_chart(club_data.set_index("School")["Club Players"])
+            c2.markdown(f"<div style='text-align:right'>{int(row['Club Players'])}</div>", unsafe_allow_html=True)
+            c3.markdown(f"<div style='text-align:right'>{row['Share %']}%</div>", unsafe_allow_html=True)
 
 st.divider()
 st.caption("Data reflects registered player distribution by school and club.")

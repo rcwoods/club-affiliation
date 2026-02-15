@@ -2,62 +2,16 @@ import streamlit as st
 import pandas as pd
 
 # --------------------------------------------------
-# PAGE CONFIG (Wide layout fixes mobile scroll)
+# PAGE CONFIG
 # --------------------------------------------------
 
 st.set_page_config(
     page_title="Club Affiliation Explorer",
-    layout="wide"
+    layout="centered"
 )
 
 # --------------------------------------------------
-# GLOBAL STYLING (Mobile Safe)
-# --------------------------------------------------
-
-st.markdown("""
-<style>
-
-/* Reduce top padding */
-.block-container {
-    padding-top: 1.5rem;
-    padding-bottom: 6rem;
-}
-
-/* Clickable names */
-button[kind="secondary"] {
-    background: none !important;
-    border: none !important;
-    padding: 0 !important;
-    color: inherit !important;
-    font-weight: 600 !important;
-    text-align: left !important;
-}
-button[kind="secondary"]:hover {
-    text-decoration: underline;
-}
-
-/* Compact breakdown styling */
-.header-row {
-    font-weight: 600;
-    opacity: 0.75;
-    padding-bottom: 4px;
-}
-.compact-row {
-    padding: 2px 0px;
-}
-.divider-line {
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    margin: 4px 0 6px 0;
-}
-
-/* Prevent bottom trapping */
-footer {visibility: hidden;}
-
-</style>
-""", unsafe_allow_html=True)
-
-# --------------------------------------------------
-# LOAD DATA
+# DATA LOADING
 # --------------------------------------------------
 
 @st.cache_data
@@ -77,59 +31,33 @@ def load_data():
 
     return df
 
+
 df = load_data()
 
 # --------------------------------------------------
-# SESSION STATE
+# MODE SELECTOR
 # --------------------------------------------------
-
-if "mode" not in st.session_state:
-    st.session_state.mode = "School"
-
-if "selected_school" not in st.session_state:
-    st.session_state.selected_school = None
-
-if "selected_club" not in st.session_state:
-    st.session_state.selected_club = None
-
-# --------------------------------------------------
-# HEADER
-# --------------------------------------------------
-
-st.title("Club Affiliation Explorer")
-st.caption("McKinnon Basketball Association")
 
 mode = st.radio(
-    "Search by",
+    "",
     ["School", "Club"],
-    horizontal=True,
-    index=0 if st.session_state.mode == "School" else 1
+    horizontal=True
 )
 
-st.session_state.mode = mode
 st.divider()
 
-# ==================================================
+# --------------------------------------------------
 # SCHOOL MODE
-# ==================================================
+# --------------------------------------------------
 
 if mode == "School":
 
-    schools = sorted(df["School"].unique())
-
     selected_school = st.selectbox(
         "Select a School",
-        ["Select a School"] + schools,
-        index=(
-            schools.index(st.session_state.selected_school) + 1
-            if st.session_state.selected_school in schools
-            else 0
-        )
+        options=["Select a School"] + sorted(df["School"].unique())
     )
 
     if selected_school != "Select a School":
-
-        st.session_state.selected_school = selected_school
 
         school_data = (
             df[df["School"] == selected_school]
@@ -137,60 +65,82 @@ if mode == "School":
             .reset_index(drop=True)
         )
 
+        total_players = int(school_data["Total Players"].iloc[0])
         primary = school_data.iloc[0]
 
-        st.caption(f"{int(primary['Total Players'])} total players from this school")
+        # Title
+        st.markdown(f"# {selected_school}")
+        st.caption(f"{total_players} total players from this school")
 
-        st.markdown("### Most Common Club")
+        st.divider()
 
-        if st.button(primary["Club"], key="primary_club", type="secondary"):
+        # Most Common Club
+        st.markdown("## Most Common Club")
+
+        if st.button(primary["Club"], key="primary_club"):
             st.session_state.mode = "Club"
-            st.session_state.selected_club = primary["Club"]
-            st.rerun()
+            st.experimental_rerun()
 
-        st.metric("Affiliation Share", f"{primary['Affiliation %']}%")
+        st.markdown(f"### {primary['Affiliation %']:.2f}%")
 
-        st.markdown("### Full Breakdown")
+        st.divider()
 
-        h1, h2, h3 = st.columns([5,1,1], gap="small")
-        h1.markdown('<div class="header-row">Club</div>', unsafe_allow_html=True)
-        h2.markdown('<div class="header-row" style="text-align:right;">Players</div>', unsafe_allow_html=True)
-        h3.markdown('<div class="header-row" style="text-align:right;">% Share</div>', unsafe_allow_html=True)
+        # Top 3 Clubs
+        st.markdown("## Top 3 Clubs")
 
-        st.markdown('<div class="divider-line"></div>', unsafe_allow_html=True)
+        for i in range(min(3, len(school_data))):
+            row = school_data.iloc[i]
 
-        for i, row in school_data.iterrows():
-            c1, c2, c3 = st.columns([5,1,1], gap="small")
+            col1, col2 = st.columns([4,1])
 
-            if c1.button(row["Club"], key=f"club_full_{i}", type="secondary"):
-                st.session_state.mode = "Club"
-                st.session_state.selected_club = row["Club"]
-                st.rerun()
+            with col1:
+                if st.button(row["Club"], key=f"top_club_{i}"):
+                    st.session_state.mode = "Club"
+                    st.experimental_rerun()
 
-            c2.markdown(f"<div style='text-align:right'>{int(row['Club Players'])}</div>", unsafe_allow_html=True)
-            c3.markdown(f"<div style='text-align:right'>{row['Affiliation %']}%</div>", unsafe_allow_html=True)
+            with col2:
+                st.markdown(f"**{row['Affiliation %']:.2f}%**")
 
-# ==================================================
+        st.divider()
+
+        # Full Breakdown (Mobile Friendly)
+        st.markdown("## Full Breakdown")
+
+        for _, row in school_data.iterrows():
+            st.markdown(
+                f"""
+                <div style="
+                    padding: 12px 0;
+                    border-bottom: 1px solid rgba(255,255,255,0.08);
+                ">
+                    <div style="font-weight: 500; font-size: 16px;">
+                        {row['Club']}
+                    </div>
+                    <div style="
+                        font-size: 14px;
+                        color: rgba(255,255,255,0.7);
+                        margin-top: 4px;
+                    ">
+                        {int(row['Club Players'])} players • {row['Affiliation %']:.2f}%
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+
+# --------------------------------------------------
 # CLUB MODE
-# ==================================================
+# --------------------------------------------------
 
 if mode == "Club":
 
-    clubs = sorted(df["Club"].unique())
-
     selected_club = st.selectbox(
         "Select a Club",
-        ["Select a Club"] + clubs,
-        index=(
-            clubs.index(st.session_state.selected_club) + 1
-            if st.session_state.selected_club in clubs
-            else 0
-        )
+        options=["Select a Club"] + sorted(df["Club"].unique())
     )
 
     if selected_club != "Select a Club":
-
-        st.session_state.selected_club = selected_club
 
         club_data = (
             df[df["Club"] == selected_club]
@@ -198,34 +148,76 @@ if mode == "Club":
             .reset_index(drop=True)
         )
 
-        total_players = club_data["Club Players"].sum()
+        total_players = int(club_data["Club Players"].sum())
+        total_schools = club_data["School"].nunique()
+        primary_school = club_data.iloc[0]
 
-        st.caption(f"{total_players} total players across {club_data.shape[0]} schools")
+        # Title
+        st.markdown(f"# {selected_club}")
+        st.caption(f"{total_players} total players across {total_schools} schools")
 
-        breakdown = club_data.copy()
-        breakdown["Share %"] = (
-            breakdown["Club Players"] / total_players * 100
-        ).round(2)
+        st.divider()
 
-        st.markdown("### Full Breakdown")
+        # Most Common School
+        st.markdown("## Most Common School")
 
-        h1, h2, h3 = st.columns([5,1,1], gap="small")
-        h1.markdown('<div class="header-row">School</div>', unsafe_allow_html=True)
-        h2.markdown('<div class="header-row" style="text-align:right;">Players</div>', unsafe_allow_html=True)
-        h3.markdown('<div class="header-row" style="text-align:right;">% Share</div>', unsafe_allow_html=True)
+        if st.button(primary_school["School"], key="primary_school"):
+            st.session_state.mode = "School"
+            st.experimental_rerun()
 
-        st.markdown('<div class="divider-line"></div>', unsafe_allow_html=True)
+        st.markdown(
+            f"### {int(primary_school['Club Players'])} players • "
+            f"{primary_school['Affiliation %']:.2f}%"
+        )
 
-        for i, row in breakdown.iterrows():
-            c1, c2, c3 = st.columns([5,1,1], gap="small")
+        st.divider()
 
-            if c1.button(row["School"], key=f"school_full_{i}", type="secondary"):
-                st.session_state.mode = "School"
-                st.session_state.selected_school = row["School"]
-                st.rerun()
+        # Top 3 Schools
+        st.markdown("## Top 3 Schools")
 
-            c2.markdown(f"<div style='text-align:right'>{int(row['Club Players'])}</div>", unsafe_allow_html=True)
-            c3.markdown(f"<div style='text-align:right'>{row['Share %']}%</div>", unsafe_allow_html=True)
+        for i in range(min(3, len(club_data))):
+            row = club_data.iloc[i]
+
+            col1, col2 = st.columns([4,1])
+
+            with col1:
+                if st.button(row["School"], key=f"top_school_{i}"):
+                    st.session_state.mode = "School"
+                    st.experimental_rerun()
+
+            with col2:
+                st.markdown(f"**{row['Affiliation %']:.2f}%**")
+
+        st.divider()
+
+        # Full Breakdown (Mobile Friendly)
+        st.markdown("## Full Breakdown")
+
+        for _, row in club_data.iterrows():
+            st.markdown(
+                f"""
+                <div style="
+                    padding: 12px 0;
+                    border-bottom: 1px solid rgba(255,255,255,0.08);
+                ">
+                    <div style="font-weight: 500; font-size: 16px;">
+                        {row['School']}
+                    </div>
+                    <div style="
+                        font-size: 14px;
+                        color: rgba(255,255,255,0.7);
+                        margin-top: 4px;
+                    ">
+                        {int(row['Club Players'])} players • {row['Affiliation %']:.2f}%
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+# --------------------------------------------------
+# FOOTER
+# --------------------------------------------------
 
 st.divider()
 st.caption("Data reflects registered player distribution by school and club.")

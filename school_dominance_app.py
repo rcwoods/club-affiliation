@@ -2,13 +2,33 @@ import streamlit as st
 import pandas as pd
 
 # --------------------------------------------------
-# PAGE CONFIG
+# PAGE CONFIG (Must Be First Streamlit Command)
 # --------------------------------------------------
 
 st.set_page_config(
-    page_title="Club Affiliation",
+    page_title="Club Affiliation Explorer",
     layout="centered"
 )
+
+# --------------------------------------------------
+# REMOVE DEFAULT BUTTON STYLING
+# --------------------------------------------------
+
+st.markdown("""
+<style>
+button[kind="secondary"] {
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    color: inherit !important;
+    font-weight: 600 !important;
+    text-align: left !important;
+}
+button[kind="secondary"]:hover {
+    text-decoration: underline;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # --------------------------------------------------
 # DATA LOADING
@@ -48,7 +68,7 @@ if "selected_club" not in st.session_state:
     st.session_state.selected_club = None
 
 # --------------------------------------------------
-# HEADER (Compact)
+# HEADER
 # --------------------------------------------------
 
 st.title("Club Affiliation Explorer")
@@ -57,9 +77,11 @@ st.caption("McKinnon Basketball Association")
 mode = st.radio(
     "Search by",
     ["School", "Club"],
-    horizontal=True
+    horizontal=True,
+    index=0 if st.session_state.mode == "School" else 1
 )
 
+st.session_state.mode = mode
 st.divider()
 
 # ==================================================
@@ -72,10 +94,17 @@ if mode == "School":
 
     selected_school = st.selectbox(
         "Select a School",
-        ["Select a School"] + school_list
+        ["Select a School"] + school_list,
+        index=(
+            school_list.index(st.session_state.selected_school) + 1
+            if st.session_state.selected_school in school_list
+            else 0
+        )
     )
 
     if selected_school != "Select a School":
+
+        st.session_state.selected_school = selected_school
 
         school_data = (
             df[df["School"] == selected_school]
@@ -90,49 +119,46 @@ if mode == "School":
 
         # Most Common Club
         st.markdown("### Most Common Club")
-        st.markdown(f"**{primary['Club']}**")
+
+        if st.button(primary["Club"], key="primary_club", type="secondary"):
+            st.session_state.mode = "Club"
+            st.session_state.selected_club = primary["Club"]
+            st.rerun()
+
         st.metric("Affiliation Share", f"{primary['Affiliation %']}%")
 
-        # Top 3 (Vertical for mobile)
+        # Top 3 Clubs
         st.markdown("### Top 3 Clubs")
 
-        for _, row in school_data.head(3).iterrows():
-            st.markdown(
-                f"**{row['Club']}**  \n"
-                f"{int(row['Club Players'])} players  \n"
-                f"{row['Affiliation %']}%"
-            )
-            st.markdown("---")
+        for i, row in school_data.head(3).iterrows():
 
-        # Table
-        st.markdown("### Full Breakdown (Tap a row)")
+            col1, col2, col3 = st.columns([4, 1, 1])
+
+            if col1.button(row["Club"], key=f"club_top_{i}", type="secondary"):
+                st.session_state.mode = "Club"
+                st.session_state.selected_club = row["Club"]
+                st.rerun()
+
+            col2.write(int(row["Club Players"]))
+            col3.write(f"{row['Affiliation %']}%")
+
+        # Full Breakdown Table
+        st.markdown("### Full Breakdown")
 
         display_table = school_data[[
             "Club",
             "Club Players",
             "Affiliation %"
         ]].rename(columns={
-            "Club Players": "Players"
+            "Club Players": "Players at Club"
         })
 
-        selection = st.dataframe(
-            display_table,
-            use_container_width=True,
-            hide_index=True,
-            selection_mode="single-row",
-            on_select="rerun",
-            height=300
-        )
+        st.dataframe(display_table, use_container_width=True, hide_index=True)
 
-        if selection.selection.rows:
-            selected_row = selection.selection.rows[0]
-            selected_club = display_table.iloc[selected_row]["Club"]
-            st.session_state.mode = "Club"
-            st.session_state.selected_club = selected_club
-            st.rerun()
-
+        # Chart
         st.markdown("### Affiliation Share")
         st.bar_chart(school_data.set_index("Club")["Affiliation %"])
+
 
 # ==================================================
 # CLUB MODE
@@ -144,10 +170,17 @@ if mode == "Club":
 
     selected_club = st.selectbox(
         "Select a Club",
-        ["Select a Club"] + club_list
+        ["Select a Club"] + club_list,
+        index=(
+            club_list.index(st.session_state.selected_club) + 1
+            if st.session_state.selected_club in club_list
+            else 0
+        )
     )
 
     if selected_club != "Select a Club":
+
+        st.session_state.selected_club = selected_club
 
         club_data = (
             df[df["Club"] == selected_club]
@@ -159,42 +192,34 @@ if mode == "Club":
 
         st.caption(f"{total_players} total players across {club_data.shape[0]} schools")
 
+        # Top 3 Schools
         st.markdown("### Top 3 Schools")
 
-        for _, row in club_data.head(3).iterrows():
-            st.markdown(
-                f"**{row['School']}**  \n"
-                f"{int(row['Club Players'])} players  \n"
-                f"{row['Affiliation %']}%"
-            )
-            st.markdown("---")
+        for i, row in club_data.head(3).iterrows():
 
-        st.markdown("### Full Breakdown (Tap a row)")
+            col1, col2 = st.columns([4, 1])
+
+            if col1.button(row["School"], key=f"school_top_{i}", type="secondary"):
+                st.session_state.mode = "School"
+                st.session_state.selected_school = row["School"]
+                st.rerun()
+
+            col2.write(int(row["Club Players"]))
+
+        # Full Breakdown Table
+        st.markdown("### Full Breakdown")
 
         display_table = club_data[[
             "School",
             "Club Players",
             "Affiliation %"
         ]].rename(columns={
-            "Club Players": "Players"
+            "Club Players": "Players from School"
         })
 
-        selection = st.dataframe(
-            display_table,
-            use_container_width=True,
-            hide_index=True,
-            selection_mode="single-row",
-            on_select="rerun",
-            height=300
-        )
+        st.dataframe(display_table, use_container_width=True, hide_index=True)
 
-        if selection.selection.rows:
-            selected_row = selection.selection.rows[0]
-            selected_school = display_table.iloc[selected_row]["School"]
-            st.session_state.mode = "School"
-            st.session_state.selected_school = selected_school
-            st.rerun()
-
+        # Chart
         st.markdown("### Players by School")
         st.bar_chart(club_data.set_index("School")["Club Players"])
 

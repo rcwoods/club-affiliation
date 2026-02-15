@@ -44,6 +44,8 @@ st.markdown(
     "Explore how players from each school are distributed across basketball clubs."
 )
 
+st.divider()
+
 # --------------------------------------------------
 # SCHOOL SELECTION
 # --------------------------------------------------
@@ -67,37 +69,23 @@ if selected_school:
 
     primary_affiliation = school_data.iloc[0]
 
-    # ---- Affiliation Category ----
-    affiliation_level = ""
-    if primary_affiliation["Affiliation %"] >= 60:
-        affiliation_level = "Strong Affiliation"
-    elif primary_affiliation["Affiliation %"] >= 40:
-        affiliation_level = "Leading Affiliation"
-    elif primary_affiliation["Affiliation %"] >= 25:
-        affiliation_level = "Shared Affiliation"
-    else:
-        affiliation_level = "Broad Distribution"
+    # ---- Primary Affiliation Section ----
+    st.markdown("### Primary Club Affiliation")
+    st.markdown(f"**{primary_affiliation['Club']}**")
 
-    st.divider()
-
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
 
     col1.metric(
-        "Primary Club Affiliation",
-        primary_affiliation["Club"]
-    )
-
-    col2.metric(
         "Affiliation Share",
         f"{primary_affiliation['Affiliation %']}%"
     )
 
-    col3.metric(
+    col2.metric(
         "Total Players",
         int(primary_affiliation["Total Players"])
     )
 
-    st.caption(affiliation_level)
+    st.divider()
 
     # ---- Breakdown Table ----
     st.subheader("School Affiliation Breakdown")

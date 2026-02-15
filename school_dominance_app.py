@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # --------------------------------------------------
-# PAGE CONFIG
+# PAGE CONFIG (Wide layout fixes mobile scroll)
 # --------------------------------------------------
 
 st.set_page_config(
@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# GLOBAL STYLING (Responsive Breakdown)
+# GLOBAL STYLING (Mobile Safe)
 # --------------------------------------------------
 
 st.markdown("""
@@ -23,7 +23,7 @@ st.markdown("""
     padding-bottom: 6rem;
 }
 
-/* Clean clickable names */
+/* Clickable names */
 button[kind="secondary"] {
     background: none !important;
     border: none !important;
@@ -36,41 +36,21 @@ button[kind="secondary"]:hover {
     text-decoration: underline;
 }
 
-/* Breakdown Header */
-.breakdown-header {
+/* Compact breakdown styling */
+.header-row {
     font-weight: 600;
     opacity: 0.75;
-    margin-bottom: 8px;
+    padding-bottom: 4px;
 }
-
-/* Desktop Row */
-.breakdown-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
+.compact-row {
+    padding: 2px 0px;
+}
+.divider-line {
     border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin: 4px 0 6px 0;
 }
 
-/* Numbers Right Align */
-.breakdown-metrics {
-    text-align: right;
-    min-width: 120px;
-}
-
-/* Mobile Layout */
-@media (max-width: 768px) {
-    .breakdown-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-    }
-
-    .breakdown-metrics {
-        text-align: left;
-    }
-}
-
+/* Prevent bottom trapping */
 footer {visibility: hidden;}
 
 </style>
@@ -172,20 +152,23 @@ if mode == "School":
 
         st.markdown("### Full Breakdown")
 
+        h1, h2, h3 = st.columns([5,1,1], gap="small")
+        h1.markdown('<div class="header-row">Club</div>', unsafe_allow_html=True)
+        h2.markdown('<div class="header-row" style="text-align:right;">Players</div>', unsafe_allow_html=True)
+        h3.markdown('<div class="header-row" style="text-align:right;">% Share</div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="divider-line"></div>', unsafe_allow_html=True)
+
         for i, row in school_data.iterrows():
-            st.markdown(
-                f"""
-                <div class="breakdown-row">
-                    <div>
-                        {row['Club']}
-                    </div>
-                    <div class="breakdown-metrics">
-                        {int(row['Club Players'])} players • {row['Affiliation %']}%
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            c1, c2, c3 = st.columns([5,1,1], gap="small")
+
+            if c1.button(row["Club"], key=f"club_full_{i}", type="secondary"):
+                st.session_state.mode = "Club"
+                st.session_state.selected_club = row["Club"]
+                st.rerun()
+
+            c2.markdown(f"<div style='text-align:right'>{int(row['Club Players'])}</div>", unsafe_allow_html=True)
+            c3.markdown(f"<div style='text-align:right'>{row['Affiliation %']}%</div>", unsafe_allow_html=True)
 
 # ==================================================
 # CLUB MODE
@@ -226,20 +209,23 @@ if mode == "Club":
 
         st.markdown("### Full Breakdown")
 
-        for _, row in breakdown.iterrows():
-            st.markdown(
-                f"""
-                <div class="breakdown-row">
-                    <div>
-                        {row['School']}
-                    </div>
-                    <div class="breakdown-metrics">
-                        {int(row['Club Players'])} players • {row['Share %']}%
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+        h1, h2, h3 = st.columns([5,1,1], gap="small")
+        h1.markdown('<div class="header-row">School</div>', unsafe_allow_html=True)
+        h2.markdown('<div class="header-row" style="text-align:right;">Players</div>', unsafe_allow_html=True)
+        h3.markdown('<div class="header-row" style="text-align:right;">% Share</div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="divider-line"></div>', unsafe_allow_html=True)
+
+        for i, row in breakdown.iterrows():
+            c1, c2, c3 = st.columns([5,1,1], gap="small")
+
+            if c1.button(row["School"], key=f"school_full_{i}", type="secondary"):
+                st.session_state.mode = "School"
+                st.session_state.selected_school = row["School"]
+                st.rerun()
+
+            c2.markdown(f"<div style='text-align:right'>{int(row['Club Players'])}</div>", unsafe_allow_html=True)
+            c3.markdown(f"<div style='text-align:right'>{row['Share %']}%</div>", unsafe_allow_html=True)
 
 st.divider()
 st.caption("Data reflects registered player distribution by school and club.")

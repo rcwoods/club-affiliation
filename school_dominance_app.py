@@ -78,34 +78,44 @@ if mode == "School":
 
     primary = school_data.iloc[0]
 
-    # ---- Summary Section ----
-    st.markdown("### Overview")
+    # --------------------------------------------------
+    # OVERVIEW SECTION
+    # --------------------------------------------------
 
-    col1, col2, col3 = st.columns(3)
+    st.markdown("## Overview")
 
-    col1.metric("Most Common Club", primary["Club"])
-    col2.metric("Affiliation Share", f"{primary['Affiliation %']}%")
-    col3.metric("Total Players", int(primary["Total Players"]))
+    st.markdown("**Most Common Club**")
+    st.markdown(f"### {primary['Club']}")
+
+    col1, col2 = st.columns(2)
+
+    col1.metric("Affiliation Share", f"{primary['Affiliation %']}%")
+    col2.metric("Total Players from School", int(primary["Total Players"]))
 
     st.markdown("")
 
-    # ---- Top 3 Section ----
-    st.markdown("### Top 3 Clubs")
+    # --------------------------------------------------
+    # TOP 3 SECTION (Clean Version)
+    # --------------------------------------------------
+
+    st.markdown("## Top 3 Clubs")
 
     top_3 = school_data.head(3)
-
     cols = st.columns(3)
+
     for i in range(len(top_3)):
-        cols[i].metric(
-            top_3.loc[i, "Club"],
-            f"{int(top_3.loc[i, 'Club Players'])} players",
-            f"{top_3.loc[i, 'Affiliation %']}%"
-        )
+        with cols[i]:
+            st.markdown(f"#### {top_3.loc[i, 'Club']}")
+            st.markdown(f"{int(top_3.loc[i, 'Club Players'])} players")
+            st.markdown(f"{top_3.loc[i, 'Affiliation %']}% of school players")
 
     st.markdown("")
 
-    # ---- Table ----
-    st.markdown("### Full Breakdown")
+    # --------------------------------------------------
+    # FULL BREAKDOWN
+    # --------------------------------------------------
+
+    st.markdown("## Full Breakdown")
 
     display_table = school_data[[
         "Club",
@@ -119,9 +129,13 @@ if mode == "School":
 
     st.markdown("")
 
-    # ---- Chart ----
-    st.markdown("### Affiliation Share by Club")
+    # --------------------------------------------------
+    # CHART
+    # --------------------------------------------------
+
+    st.markdown("## Affiliation Share by Club")
     st.bar_chart(school_data.set_index("Club")["Affiliation %"])
+
 
 # ==================================================
 # CLUB MODE
@@ -143,32 +157,42 @@ if mode == "Club":
     total_players = club_data["Club Players"].sum()
     total_schools = club_data.shape[0]
 
-    # ---- Summary Section ----
-    st.markdown("### Overview")
+    # --------------------------------------------------
+    # OVERVIEW SECTION
+    # --------------------------------------------------
+
+    st.markdown("## Overview")
+
+    st.markdown(f"### {selected_club}")
 
     col1, col2 = st.columns(2)
-
     col1.metric("Total Players", int(total_players))
     col2.metric("Schools Represented", total_schools)
 
     st.markdown("")
 
-    # ---- Top 3 Schools ----
-    st.markdown("### Top 3 Schools")
+    # --------------------------------------------------
+    # TOP 3 SCHOOLS
+    # --------------------------------------------------
+
+    st.markdown("## Top 3 Schools")
 
     top_3 = club_data.head(3)
-
     cols = st.columns(3)
+
     for i in range(len(top_3)):
-        cols[i].metric(
-            top_3.loc[i, "School"],
-            f"{int(top_3.loc[i, 'Club Players'])} players"
-        )
+        with cols[i]:
+            st.markdown(f"#### {top_3.loc[i, 'School']}")
+            st.markdown(f"{int(top_3.loc[i, 'Club Players'])} players")
+            st.markdown(f"{top_3.loc[i, 'Affiliation %']}% of that school")
 
     st.markdown("")
 
-    # ---- Table ----
-    st.markdown("### Full Breakdown")
+    # --------------------------------------------------
+    # FULL BREAKDOWN
+    # --------------------------------------------------
+
+    st.markdown("## Full Breakdown")
 
     display_table = club_data[[
         "School",
@@ -182,8 +206,11 @@ if mode == "Club":
 
     st.markdown("")
 
-    # ---- Chart ----
-    st.markdown("### Players by School")
+    # --------------------------------------------------
+    # CHART
+    # --------------------------------------------------
+
+    st.markdown("## Players by School")
     st.bar_chart(club_data.set_index("School")["Club Players"])
 
 # --------------------------------------------------

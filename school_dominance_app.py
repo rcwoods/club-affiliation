@@ -40,10 +40,7 @@ df = load_data()
 
 st.title("McKinnon Basketball Association")
 st.subheader("Club Affiliation Explorer")
-
-st.caption(
-    "Explore how players are distributed across schools and clubs."
-)
+st.caption("Explore how players are distributed across schools and clubs.")
 
 st.markdown("")
 
@@ -65,76 +62,77 @@ st.markdown("")
 
 if mode == "School":
 
+    school_options = ["Select a School"] + sorted(df["School"].unique())
+
     selected_school = st.selectbox(
-        "Select a School",
-        sorted(df["School"].unique())
+        "School",
+        school_options,
+        index=0
     )
 
-    school_data = (
-        df[df["School"] == selected_school]
-        .sort_values("Affiliation %", ascending=False)
-        .reset_index(drop=True)
-    )
+    if selected_school != "Select a School":
 
-    primary = school_data.iloc[0]
+        school_data = (
+            df[df["School"] == selected_school]
+            .sort_values("Affiliation %", ascending=False)
+            .reset_index(drop=True)
+        )
 
-    # --------------------------------------------------
-    # OVERVIEW SECTION
-    # --------------------------------------------------
+        primary = school_data.iloc[0]
 
-    st.markdown("## Overview")
+        # --------------------------------------------------
+        # OVERVIEW
+        # --------------------------------------------------
 
-    st.markdown("**Most Common Club**")
-    st.markdown(f"### {primary['Club']}")
+        st.markdown("## Overview")
+        st.markdown(f"### {primary['Club']}")
+        st.caption(f"{int(primary['Total Players'])} total players from this school")
 
-    col1, col2 = st.columns(2)
+        st.metric("Affiliation Share", f"{primary['Affiliation %']}%")
 
-    col1.metric("Affiliation Share", f"{primary['Affiliation %']}%")
-    col2.metric("Total Players from School", int(primary["Total Players"]))
+        st.markdown("")
 
-    st.markdown("")
+        # --------------------------------------------------
+        # TOP 3
+        # --------------------------------------------------
 
-    # --------------------------------------------------
-    # TOP 3 SECTION (Clean Version)
-    # --------------------------------------------------
+        st.markdown("## Top 3 Clubs")
 
-    st.markdown("## Top 3 Clubs")
+        top_3 = school_data.head(3)
+        cols = st.columns(3)
 
-    top_3 = school_data.head(3)
-    cols = st.columns(3)
+        for i in range(len(top_3)):
+            with cols[i]:
+                st.markdown(f"#### {top_3.loc[i, 'Club']}")
+                st.markdown(f"{int(top_3.loc[i, 'Club Players'])} players")
+                st.markdown(f"{top_3.loc[i, 'Affiliation %']}%")
 
-    for i in range(len(top_3)):
-        with cols[i]:
-            st.markdown(f"#### {top_3.loc[i, 'Club']}")
-            st.markdown(f"{int(top_3.loc[i, 'Club Players'])} players")
-            st.markdown(f"{top_3.loc[i, 'Affiliation %']}% of school players")
+        st.markdown("")
 
-    st.markdown("")
+        # --------------------------------------------------
+        # FULL BREAKDOWN
+        # --------------------------------------------------
 
-    # --------------------------------------------------
-    # FULL BREAKDOWN
-    # --------------------------------------------------
+        st.markdown("## Full Breakdown")
 
-    st.markdown("## Full Breakdown")
+        display_table = school_data[[
+            "Club",
+            "Club Players",
+            "Affiliation %"
+        ]].rename(columns={
+            "Club Players": "Players at Club"
+        })
 
-    display_table = school_data[[
-        "Club",
-        "Club Players",
-        "Affiliation %"
-    ]].rename(columns={
-        "Club Players": "Players at Club"
-    })
+        st.dataframe(display_table, use_container_width=True, hide_index=True)
 
-    st.dataframe(display_table, use_container_width=True, hide_index=True)
+        st.markdown("")
 
-    st.markdown("")
+        # --------------------------------------------------
+        # CHART
+        # --------------------------------------------------
 
-    # --------------------------------------------------
-    # CHART
-    # --------------------------------------------------
-
-    st.markdown("## Affiliation Share by Club")
-    st.bar_chart(school_data.set_index("Club")["Affiliation %"])
+        st.markdown("## Affiliation Share by Club")
+        st.bar_chart(school_data.set_index("Club")["Affiliation %"])
 
 
 # ==================================================
@@ -143,75 +141,76 @@ if mode == "School":
 
 if mode == "Club":
 
+    club_options = ["Select a Club"] + sorted(df["Club"].unique())
+
     selected_club = st.selectbox(
-        "Select a Club",
-        sorted(df["Club"].unique())
+        "Club",
+        club_options,
+        index=0
     )
 
-    club_data = (
-        df[df["Club"] == selected_club]
-        .sort_values("Club Players", ascending=False)
-        .reset_index(drop=True)
-    )
+    if selected_club != "Select a Club":
 
-    total_players = club_data["Club Players"].sum()
-    total_schools = club_data.shape[0]
+        club_data = (
+            df[df["Club"] == selected_club]
+            .sort_values("Club Players", ascending=False)
+            .reset_index(drop=True)
+        )
 
-    # --------------------------------------------------
-    # OVERVIEW SECTION
-    # --------------------------------------------------
+        total_players = club_data["Club Players"].sum()
+        total_schools = club_data.shape[0]
 
-    st.markdown("## Overview")
+        # --------------------------------------------------
+        # OVERVIEW
+        # --------------------------------------------------
 
-    st.markdown(f"### {selected_club}")
+        st.markdown("## Overview")
+        st.markdown(f"### {selected_club}")
+        st.caption(f"{total_players} total players across {total_schools} schools")
 
-    col1, col2 = st.columns(2)
-    col1.metric("Total Players", int(total_players))
-    col2.metric("Schools Represented", total_schools)
+        st.markdown("")
 
-    st.markdown("")
+        # --------------------------------------------------
+        # TOP 3
+        # --------------------------------------------------
 
-    # --------------------------------------------------
-    # TOP 3 SCHOOLS
-    # --------------------------------------------------
+        st.markdown("## Top 3 Schools")
 
-    st.markdown("## Top 3 Schools")
+        top_3 = club_data.head(3)
+        cols = st.columns(3)
 
-    top_3 = club_data.head(3)
-    cols = st.columns(3)
+        for i in range(len(top_3)):
+            with cols[i]:
+                st.markdown(f"#### {top_3.loc[i, 'School']}")
+                st.markdown(f"{int(top_3.loc[i, 'Club Players'])} players")
+                st.markdown(f"{top_3.loc[i, 'Affiliation %']}%")
 
-    for i in range(len(top_3)):
-        with cols[i]:
-            st.markdown(f"#### {top_3.loc[i, 'School']}")
-            st.markdown(f"{int(top_3.loc[i, 'Club Players'])} players")
-            st.markdown(f"{top_3.loc[i, 'Affiliation %']}% of that school")
+        st.markdown("")
 
-    st.markdown("")
+        # --------------------------------------------------
+        # FULL BREAKDOWN
+        # --------------------------------------------------
 
-    # --------------------------------------------------
-    # FULL BREAKDOWN
-    # --------------------------------------------------
+        st.markdown("## Full Breakdown")
 
-    st.markdown("## Full Breakdown")
+        display_table = club_data[[
+            "School",
+            "Club Players",
+            "Affiliation %"
+        ]].rename(columns={
+            "Club Players": "Players from School"
+        })
 
-    display_table = club_data[[
-        "School",
-        "Club Players",
-        "Affiliation %"
-    ]].rename(columns={
-        "Club Players": "Players from School"
-    })
+        st.dataframe(display_table, use_container_width=True, hide_index=True)
 
-    st.dataframe(display_table, use_container_width=True, hide_index=True)
+        st.markdown("")
 
-    st.markdown("")
+        # --------------------------------------------------
+        # CHART
+        # --------------------------------------------------
 
-    # --------------------------------------------------
-    # CHART
-    # --------------------------------------------------
-
-    st.markdown("## Players by School")
-    st.bar_chart(club_data.set_index("School")["Club Players"])
+        st.markdown("## Players by School")
+        st.bar_chart(club_data.set_index("School")["Club Players"])
 
 # --------------------------------------------------
 # FOOTER

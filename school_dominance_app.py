@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# CLEAN BUTTON STYLING
+# CLEAN BUTTON STYLE (Professional clickable names)
 # --------------------------------------------------
 
 st.markdown("""
@@ -129,10 +129,9 @@ if mode == "School":
         st.markdown("### Top 3 Clubs")
 
         for i, row in school_data.head(3).iterrows():
-
             col1, col2, col3 = st.columns([4, 1, 1])
 
-            if col1.button(row["Club"], key=f"club_{i}", type="secondary"):
+            if col1.button(row["Club"], key=f"club_top_{i}", type="secondary"):
                 st.session_state.mode = "Club"
                 st.session_state.selected_club = row["Club"]
                 st.rerun()
@@ -140,18 +139,19 @@ if mode == "School":
             col2.write(int(row["Club Players"]))
             col3.write(f"{row['Affiliation %']}%")
 
-        # Full Breakdown
+        # Full Breakdown (Clickable)
         st.markdown("### Full Breakdown")
 
-        display_table = school_data[[
-            "Club",
-            "Club Players",
-            "Affiliation %"
-        ]].rename(columns={
-            "Club Players": "Players at Club"
-        })
+        for i, row in school_data.iterrows():
+            col1, col2, col3 = st.columns([4, 1, 1])
 
-        st.dataframe(display_table, use_container_width=True, hide_index=True)
+            if col1.button(row["Club"], key=f"club_full_{i}", type="secondary"):
+                st.session_state.mode = "Club"
+                st.session_state.selected_club = row["Club"]
+                st.rerun()
+
+            col2.write(int(row["Club Players"]))
+            col3.write(f"{row['Affiliation %']}%")
 
         st.markdown("### Affiliation Share")
         st.bar_chart(school_data.set_index("Club")["Affiliation %"])
@@ -204,10 +204,9 @@ if mode == "Club":
         st.markdown("### Top 3 Schools")
 
         for i, row in club_data.head(3).iterrows():
-
             col1, col2, col3 = st.columns([4, 1, 1])
 
-            if col1.button(row["School"], key=f"school_{i}", type="secondary"):
+            if col1.button(row["School"], key=f"school_top_{i}", type="secondary"):
                 st.session_state.mode = "School"
                 st.session_state.selected_school = row["School"]
                 st.rerun()
@@ -215,7 +214,7 @@ if mode == "Club":
             col2.write(int(row["Club Players"]))
             col3.write(f"{round((row['Club Players']/total_players)*100, 2)}%")
 
-        # Full Breakdown
+        # Full Breakdown (Clickable)
         st.markdown("### Full Breakdown")
 
         breakdown = club_data.copy()
@@ -223,15 +222,16 @@ if mode == "Club":
             breakdown["Club Players"] / total_players * 100
         ).round(2)
 
-        display_table = breakdown[[
-            "School",
-            "Club Players",
-            "Share %"
-        ]].rename(columns={
-            "Club Players": "Players from School"
-        })
+        for i, row in breakdown.iterrows():
+            col1, col2, col3 = st.columns([4, 1, 1])
 
-        st.dataframe(display_table, use_container_width=True, hide_index=True)
+            if col1.button(row["School"], key=f"school_full_{i}", type="secondary"):
+                st.session_state.mode = "School"
+                st.session_state.selected_school = row["School"]
+                st.rerun()
+
+            col2.write(int(row["Club Players"]))
+            col3.write(f"{row['Share %']}%")
 
         st.markdown("### Players by School")
         st.bar_chart(club_data.set_index("School")["Club Players"])

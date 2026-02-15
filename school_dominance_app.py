@@ -7,7 +7,6 @@ import pandas as pd
 
 st.set_page_config(
     page_title="Club Affiliation",
-    page_icon="🏀",
     layout="centered"
 )
 
@@ -39,7 +38,7 @@ df = load_data()
 # HEADER
 # --------------------------------------------------
 
-st.title("🏀 Club Affiliation Explorer")
+st.title("McKinnon Basketball Association Club Affiliation Explorer")
 st.markdown(
     "Search your school to see how players are distributed across clubs."
 )

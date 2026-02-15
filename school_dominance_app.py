@@ -41,20 +41,40 @@ df = load_data()
 
 st.title("🏀 Club Affiliation Explorer")
 st.markdown(
-    "Explore how players from each school are distributed across basketball clubs."
+    "Search your school to see how players are distributed across clubs."
 )
 
 st.divider()
 
 # --------------------------------------------------
-# SCHOOL SELECTION
+# SEARCH FUNCTION
 # --------------------------------------------------
 
-school_list = sorted(df["School"].unique())
-selected_school = st.selectbox(
-    "Select a School",
-    school_list
+search_term = st.text_input(
+    "Type your school name",
+    placeholder="Start typing..."
 )
+
+school_list = sorted(df["School"].unique())
+
+if search_term:
+    filtered_schools = [
+        school for school in school_list
+        if search_term.lower() in school.lower()
+    ]
+else:
+    filtered_schools = school_list
+
+selected_school = None
+
+if filtered_schools:
+    selected_school = st.selectbox(
+        "Select from matching schools",
+        filtered_schools
+    )
+else:
+    st.warning("No schools match your search.")
+    st.stop()
 
 # --------------------------------------------------
 # DISPLAY RESULTS

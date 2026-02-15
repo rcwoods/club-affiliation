@@ -40,40 +40,22 @@ df = load_data()
 
 st.title("McKinnon Basketball Association Club Affiliation Explorer")
 st.markdown(
-    "Search your school to see how players are distributed across clubs."
+    """
+This tool shows where students from your school currently play basketball.  
+It can help families understand which clubs have the strongest presence from their school community.
+"""
 )
 
 st.divider()
 
 # --------------------------------------------------
-# SEARCH FUNCTION
+# SCHOOL SELECTION (Built-in searchable selectbox)
 # --------------------------------------------------
 
-search_term = st.text_input(
-    "Type your school name",
-    placeholder="Start typing..."
+selected_school = st.selectbox(
+    "Search or Select Your School",
+    sorted(df["School"].unique())
 )
-
-school_list = sorted(df["School"].unique())
-
-if search_term:
-    filtered_schools = [
-        school for school in school_list
-        if search_term.lower() in school.lower()
-    ]
-else:
-    filtered_schools = school_list
-
-selected_school = None
-
-if filtered_schools:
-    selected_school = st.selectbox(
-        "Select from matching schools",
-        filtered_schools
-    )
-else:
-    st.warning("No schools match your search.")
-    st.stop()
 
 # --------------------------------------------------
 # DISPLAY RESULTS
@@ -84,35 +66,58 @@ if selected_school:
     school_data = (
         df[df["School"] == selected_school]
         .sort_values("Affiliation %", ascending=False)
+        .reset_index(drop=True)
     )
 
     primary_affiliation = school_data.iloc[0]
 
-    # ---- Primary Club Section ----
-    st.markdown("### Primary Club Affiliation")
+    # --------------------------------------------------
+    # MOST COMMON CLUB SECTION
+    # --------------------------------------------------
+
+    st.markdown("### Most Common Club for This School")
+
     st.markdown(f"**{primary_affiliation['Club']}**")
 
-    col1, col2, col3 = st.columns(3)
-
-    col1.metric(
-        "Players at This Club",
-        int(primary_affiliation["Club Players"])
+    st.markdown(
+        f"{int(primary_affiliation['Club Players'])} of "
+        f"{int(primary_affiliation['Total Players'])} players "
+        f"from this school currently play at this club "
+        f"({primary_affiliation['Affiliation %']}%)."
     )
 
-    col2.metric(
-        "Affiliation Share",
-        f"{primary_affiliation['Affiliation %']}%"
-    )
-
-    col3.metric(
-        "Total Players From This School",
-        int(primary_affiliation["Total Players"])
-    )
+    # Interpretation guidance
+    if primary_affiliation["Affiliation %"] >= 50:
+        st.info("This club has a majority of players from this school.")
+    elif primary_affiliation["Affiliation %"] >= 30:
+        st.info("This club has the largest share of players from this school.")
+    else:
+        st.info("Players from this school are spread across multiple clubs.")
 
     st.divider()
 
-    # ---- Breakdown Table ----
-    st.subheader("School Affiliation Breakdown")
+    # --------------------------------------------------
+    # TOP 3 CLUBS
+    # --------------------------------------------------
+
+    st.markdown("### Top 3 Clubs from This School")
+
+    top_3 = school_data.head(3)
+
+    for i, row in top_3.iterrows():
+        st.markdown(
+            f"**{i+1}. {row['Club']}**  \n"
+            f"{int(row['Club Players'])} players "
+            f"({row['Affiliation %']}%)"
+        )
+
+    st.divider()
+
+    # --------------------------------------------------
+    # FULL BREAKDOWN
+    # --------------------------------------------------
+
+    st.subheader("Full School Affiliation Breakdown")
 
     display_table = school_data[[
         "Club",
@@ -128,7 +133,10 @@ if selected_school:
         hide_index=True
     )
 
-    # ---- Bar Chart ----
+    # --------------------------------------------------
+    # BAR CHART
+    # --------------------------------------------------
+
     st.subheader("Affiliation Share by Club")
 
     chart_data = school_data.set_index("Club")["Affiliation %"]
@@ -138,4 +146,6 @@ if selected_school:
 # FOOTER
 # --------------------------------------------------
 
-st.caption("Affiliation insights based on registered player distribution.")
+st.caption(
+    "Data reflects registered player distribution by school and club."
+)

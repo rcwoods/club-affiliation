@@ -176,7 +176,7 @@ if mode == "School":
             go_to_club(primary["Club"])
 
         st.markdown(
-            f"<div class='sub-text'>{int(primary['Club Players'])} players from this school • {primary['Affiliation %']}% Share</div>",
+            f"<div class='sub-text'>{int(primary['Club Players'])} players from this school • {primary['Affiliation %']}% share</div>",
             unsafe_allow_html=True
         )
 
@@ -192,7 +192,7 @@ if mode == "School":
                 go_to_club(row["Club"])
 
             col_name.markdown(
-                f"<div class='sub-text'>{int(row['Club Players'])} players from this school • {row['Affiliation %']}% Share</div>",
+                f"<div class='sub-text'>{int(row['Club Players'])} players from this school • {row['Affiliation %']}% share</div>",
                 unsafe_allow_html=True
             )
 
@@ -263,7 +263,7 @@ if mode == "Club":
             go_to_school(primary["School"])
 
         st.markdown(
-            f"<div class='sub-text'>{int(primary['Club Players'])} players from this club • {primary['Share %']}% Share</div>",
+            f"<div class='sub-text'>{int(primary['Club Players'])} players from this club • {primary['Share %']}% share</div>",
             unsafe_allow_html=True
         )
 
@@ -279,7 +279,7 @@ if mode == "Club":
                 go_to_school(row["School"])
 
             col_name.markdown(
-                f"<div class='sub-text'>{int(row['Club Players'])} players from this club • {row['Share %']}% Share</div>",
+                f"<div class='sub-text'>{int(row['Club Players'])} players from this club • {row['Share %']}% share</div>",
                 unsafe_allow_html=True
             )
 

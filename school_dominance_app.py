@@ -92,7 +92,7 @@ if "selected_club" not in st.session_state:
     st.session_state.selected_club = None
 
 # --------------------------------------------------
-# SAFE NAVIGATION HANDLER
+# SAFE NAVIGATION
 # --------------------------------------------------
 
 def go_to_school(name):
@@ -105,7 +105,6 @@ def go_to_club(name):
 
 if "_nav_target" in st.session_state:
     target_mode, target_value = st.session_state._nav_target
-
     st.session_state.mode = target_mode
 
     if target_mode == "School":
@@ -177,27 +176,9 @@ if mode == "School":
             go_to_club(primary["Club"])
 
         st.markdown(
-            f"<div class='sub-text'>{int(primary['Club Players'])} players • {primary['Affiliation %']}%</div>",
+            f"<div class='sub-text'>{int(primary['Club Players'])} players • % Share: {primary['Affiliation %']}%</div>",
             unsafe_allow_html=True
         )
-
-        # ---------------- TOP 3
-        st.markdown("<div class='section-space'></div>", unsafe_allow_html=True)
-        st.markdown("## Top 3 Clubs")
-
-        for i in range(min(3, len(school_data))):
-            row = school_data.iloc[i]
-
-            col_rank, col_name = st.columns([1,9])
-            col_rank.markdown(f"<div class='rank-number'>#{i+1}</div>", unsafe_allow_html=True)
-
-            if col_name.button(row["Club"], key=f"top_{i}", type="secondary"):
-                go_to_club(row["Club"])
-
-            col_name.markdown(
-                f"<div class='sub-text'>{int(row['Club Players'])} players • {row['Affiliation %']}%</div>",
-                unsafe_allow_html=True
-            )
 
         # ---------------- FULL BREAKDOWN
         st.markdown("<div class='section-space'></div>", unsafe_allow_html=True)
@@ -211,7 +192,7 @@ if mode == "School":
                 go_to_club(row["Club"])
 
             col_name.markdown(
-                f"<div class='sub-text'>{int(row['Club Players'])} players • {row['Affiliation %']}%</div>",
+                f"<div class='sub-text'>{int(row['Club Players'])} players • % Share: {row['Affiliation %']}%</div>",
                 unsafe_allow_html=True
             )
 
@@ -228,7 +209,7 @@ if mode == "School":
 
         fig.update_layout(
             xaxis_title="Club",
-            yaxis_title="Affiliation %",
+            yaxis_title="% Share",
             showlegend=False
         )
 
@@ -282,27 +263,9 @@ if mode == "Club":
             go_to_school(primary["School"])
 
         st.markdown(
-            f"<div class='sub-text'>{int(primary['Club Players'])} players • {primary['Share %']}%</div>",
+            f"<div class='sub-text'>{int(primary['Club Players'])} players • % Share: {primary['Share %']}%</div>",
             unsafe_allow_html=True
         )
-
-        # ---------------- TOP 3
-        st.markdown("<div class='section-space'></div>", unsafe_allow_html=True)
-        st.markdown("## Top 3 Schools")
-
-        for i in range(min(3, len(club_data))):
-            row = club_data.iloc[i]
-
-            col_rank, col_name = st.columns([1,9])
-            col_rank.markdown(f"<div class='rank-number'>#{i+1}</div>", unsafe_allow_html=True)
-
-            if col_name.button(row["School"], key=f"top_school_{i}", type="secondary"):
-                go_to_school(row["School"])
-
-            col_name.markdown(
-                f"<div class='sub-text'>{int(row['Club Players'])} players • {row['Share %']}%</div>",
-                unsafe_allow_html=True
-            )
 
         # ---------------- FULL BREAKDOWN
         st.markdown("<div class='section-space'></div>", unsafe_allow_html=True)
@@ -316,7 +279,7 @@ if mode == "Club":
                 go_to_school(row["School"])
 
             col_name.markdown(
-                f"<div class='sub-text'>{int(row['Club Players'])} players • {row['Share %']}%</div>",
+                f"<div class='sub-text'>{int(row['Club Players'])} players • % Share: {row['Share %']}%</div>",
                 unsafe_allow_html=True
             )
 
@@ -333,7 +296,7 @@ if mode == "Club":
 
         fig.update_layout(
             xaxis_title="School",
-            yaxis_title="Share %",
+            yaxis_title="% Share",
             showlegend=False
         )
 

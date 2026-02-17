@@ -3,28 +3,33 @@ import pandas as pd
 import plotly.express as px
 
 # --------------------------------------------------
-# PAGE CONFIG (Better for Mobile)
+# PAGE CONFIG
 # --------------------------------------------------
 
 st.set_page_config(
-    page_title="Club Affiliation Explorer",
-    layout="centered"
+    page_title="School–Club Affiliation Explorer",
+    layout="wide"
 )
 
 # --------------------------------------------------
-# GLOBAL STYLING (Mobile Optimised)
+# GLOBAL STYLING (Mobile + Desktop Safe)
 # --------------------------------------------------
 
 st.markdown("""
 <style>
 
-/* Reduce excessive padding */
+/* Page spacing */
 .block-container {
-    padding-top: 1.2rem;
+    padding-top: 3rem;
     padding-bottom: 5rem;
 }
 
-/* Larger tap targets */
+/* Improve selectbox spacing on mobile */
+div[data-baseweb="select"] {
+    margin-top: 1.2rem;
+}
+
+/* Clickable links */
 button[kind="secondary"] {
     background: none !important;
     border: none !important;
@@ -41,7 +46,7 @@ button[kind="secondary"]:hover {
 
 /* Section spacing */
 .section-space {
-    margin-top: 2rem;
+    margin-top: 2.2rem;
 }
 
 /* Ranking style */
@@ -49,6 +54,7 @@ button[kind="secondary"]:hover {
     font-weight: 700;
     opacity: 0.5;
     font-size: 14px;
+    margin-top: 0.5rem;
 }
 
 /* Sub text */
@@ -58,12 +64,13 @@ button[kind="secondary"]:hover {
     margin-bottom: 18px;
 }
 
-/* Improve heading spacing */
+/* Headings */
 h2 {
-    margin-top: 1.8rem;
-    margin-bottom: 0.6rem;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
 }
 
+/* Hide Streamlit footer */
 footer {visibility: hidden;}
 
 </style>
@@ -93,7 +100,7 @@ def load_data():
 df = load_data()
 
 # --------------------------------------------------
-# SESSION STATE
+# SESSION STATE INITIALISATION
 # --------------------------------------------------
 
 if "mode" not in st.session_state:
@@ -106,19 +113,20 @@ if "selected_club" not in st.session_state:
     st.session_state.selected_club = None
 
 # --------------------------------------------------
-# SAFE NAVIGATION
+# SAFE NAVIGATION (Prevents Double Click Bug)
 # --------------------------------------------------
 
 def go_to_school(name):
-    st.session_state._nav_target = ("School", name)
+    st.session_state["_nav"] = ("School", name)
     st.rerun()
 
 def go_to_club(name):
-    st.session_state._nav_target = ("Club", name)
+    st.session_state["_nav"] = ("Club", name)
     st.rerun()
 
-if "_nav_target" in st.session_state:
-    target_mode, target_value = st.session_state._nav_target
+# Apply navigation BEFORE rendering
+if "_nav" in st.session_state:
+    target_mode, target_value = st.session_state["_nav"]
     st.session_state.mode = target_mode
 
     if target_mode == "School":
@@ -128,14 +136,15 @@ if "_nav_target" in st.session_state:
         st.session_state.selected_club = target_value
         st.session_state.selected_school = None
 
-    del st.session_state._nav_target
+    del st.session_state["_nav"]
 
 # --------------------------------------------------
 # HEADER
 # --------------------------------------------------
 
-st.title("School–Club Affiliation Explorer")
-st.caption("Explore player distribution across McKinnon Basketball Association")
+st.title("McKinnon Basketball Association")
+st.subheader("School–Club Affiliation Explorer")
+st.caption("Explore player distribution and % share across schools and clubs")
 
 mode = st.radio(
     "Search by",
@@ -195,39 +204,36 @@ if mode == "School":
         )
 
         # ---------------- FULL BREAKDOWN
+        st.markdown("<div class='section-space'></div>", unsafe_allow_html=True)
         st.markdown("## Full Breakdown")
 
         for i, row in school_data.iterrows():
+            col_rank, col_name = st.columns([1,9])
+            col_rank.markdown(f"<div class='rank-number'>#{i+1}</div>", unsafe_allow_html=True)
 
-            st.markdown(
-                f"<div class='rank-number'>#{i+1}</div>",
-                unsafe_allow_html=True
-            )
-
-            if st.button(row["Club"], key=f"club_{i}", type="secondary"):
+            if col_name.button(row["Club"], key=f"school_full_{i}", type="secondary"):
                 go_to_club(row["Club"])
 
-            st.markdown(
+            col_name.markdown(
                 f"<div class='sub-text'>{int(row['Club Players'])} players from this school • {row['Affiliation %']}% Share</div>",
                 unsafe_allow_html=True
             )
 
-        # ---------------- CHART (Horizontal = Better for Mobile)
+        # ---------------- CHART
+        st.markdown("<div class='section-space'></div>", unsafe_allow_html=True)
         st.markdown("## Distribution Chart")
 
         fig = px.bar(
             school_data,
-            y="Club",
-            x="Affiliation %",
-            orientation="h",
+            x="Club",
+            y="Affiliation %",
             text="Affiliation %",
         )
 
         fig.update_layout(
-            xaxis_title="% Share",
-            yaxis_title="",
-            showlegend=False,
-            height=400 + (len(school_data) * 20)
+            xaxis_title="Club",
+            yaxis_title="% Share",
+            showlegend=False
         )
 
         st.plotly_chart(fig, use_container_width=True)
@@ -265,7 +271,6 @@ if mode == "Club":
             st.stop()
 
         total_players = club_data["Club Players"].sum()
-
         club_data["Share %"] = (
             club_data["Club Players"] / total_players * 100
         ).round(2)
@@ -286,42 +291,43 @@ if mode == "Club":
         )
 
         # ---------------- FULL BREAKDOWN
+        st.markdown("<div class='section-space'></div>", unsafe_allow_html=True)
         st.markdown("## Full Breakdown")
 
         for i, row in club_data.iterrows():
+            col_rank, col_name = st.columns([1,9])
+            col_rank.markdown(f"<div class='rank-number'>#{i+1}</div>", unsafe_allow_html=True)
 
-            st.markdown(
-                f"<div class='rank-number'>#{i+1}</div>",
-                unsafe_allow_html=True
-            )
-
-            if st.button(row["School"], key=f"school_{i}", type="secondary"):
+            if col_name.button(row["School"], key=f"club_full_{i}", type="secondary"):
                 go_to_school(row["School"])
 
-            st.markdown(
+            col_name.markdown(
                 f"<div class='sub-text'>{int(row['Club Players'])} players from this club • {row['Share %']}% Share</div>",
                 unsafe_allow_html=True
             )
 
-        # ---------------- CHART (Horizontal)
+        # ---------------- CHART
+        st.markdown("<div class='section-space'></div>", unsafe_allow_html=True)
         st.markdown("## Distribution Chart")
 
         fig = px.bar(
             club_data,
-            y="School",
-            x="Share %",
-            orientation="h",
+            x="School",
+            y="Share %",
             text="Share %",
         )
 
         fig.update_layout(
-            xaxis_title="% Share",
-            yaxis_title="",
-            showlegend=False,
-            height=400 + (len(club_data) * 20)
+            xaxis_title="School",
+            yaxis_title="% Share",
+            showlegend=False
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+# --------------------------------------------------
+# FOOTER
+# --------------------------------------------------
 
 st.divider()
 st.caption("Data reflects registered player distribution by school and club.")
